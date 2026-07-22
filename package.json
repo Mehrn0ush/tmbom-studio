@@ -1,0 +1,42 @@
+{
+  "name": "tmbom-studio",
+  "private": true,
+  "version": "0.1.0",
+  "description": "ThreatModeler — a TM-BOM studio for CycloneDX 2.0 threat modeling",
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mehrn0ush/tmbom-studio.git"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "build:pages": "GITHUB_PAGES=true tsc -b && GITHUB_PAGES=true vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "generate:example": "esbuild scripts/generate-example.ts --bundle --platform=node --format=esm --outfile=scripts/generate-example.bundle.mjs && node scripts/generate-example.bundle.mjs && rm -f scripts/generate-example.bundle.mjs",
+    "validate:example": "node scripts/validate-example.mjs",
+    "ci": "npm run build && npm run validate:example"
+  },
+  "dependencies": {
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "reactflow": "^11.11.4",
+    "uuid": "^14.0.1",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^6.0.3",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "esbuild": "^0.28.1",
+    "oxlint": "^1.71.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1"
+  }
+}

@@ -1,0 +1,4 @@
+# Ignore local drafts; keep the README
+*
+!.gitignore
+!README.md

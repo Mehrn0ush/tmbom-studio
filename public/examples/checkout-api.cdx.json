@@ -1,0 +1,480 @@
+{
+  "$schema": "https://cyclonedx.org/schema/2.0/cyclonedx-2.0.schema.json",
+  "specFormat": "CycloneDX",
+  "specVersion": "2.0",
+  "serialNumber": "urn:uuid:a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-07-22T20:22:49.412Z",
+    "component": {
+      "type": "application",
+      "name": "Checkout API",
+      "version": "1.2.0",
+      "bom-ref": "component-checkout-api"
+    },
+    "authors": [
+      {
+        "name": "ThreatModeler",
+        "email": "security@example.com"
+      }
+    ],
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "tmbom-studio",
+          "version": "0.1.0"
+        }
+      ]
+    }
+  },
+  "blueprints": [
+    {
+      "bom-ref": "blueprint-checkout-dfd",
+      "name": "Checkout API Data Flow",
+      "description": "Sample data-flow blueprint for an online checkout API (CycloneDX 2.0 TM-BOM)",
+      "modelTypes": [
+        "data-flow",
+        "architecture"
+      ],
+      "zones": [
+        {
+          "bom-ref": "zone-internet",
+          "type": "network",
+          "name": "Internet",
+          "description": "Untrusted public network"
+        },
+        {
+          "bom-ref": "zone-dmz",
+          "type": "trust",
+          "name": "DMZ",
+          "description": "Public-facing application tier"
+        },
+        {
+          "bom-ref": "zone-private-vpc",
+          "type": "trust",
+          "name": "Private VPC",
+          "description": "Internal services and data stores"
+        }
+      ],
+      "boundaries": [
+        {
+          "bom-ref": "boundary-internet-dmz",
+          "type": "trust",
+          "name": "Internet → DMZ",
+          "zones": [
+            "zone-internet",
+            "zone-dmz"
+          ]
+        },
+        {
+          "bom-ref": "boundary-dmz-private",
+          "type": "network",
+          "name": "DMZ → Private",
+          "zones": [
+            "zone-dmz",
+            "zone-private-vpc"
+          ]
+        }
+      ],
+      "assets": [
+        {
+          "bom-ref": "asset-customer-browser",
+          "type": "actor",
+          "name": "Customer Browser",
+          "zone": "zone-internet",
+          "description": "End-user browser client",
+          "properties": [
+            {
+              "name": "threatmodeler:x",
+              "value": "40"
+            },
+            {
+              "name": "threatmodeler:y",
+              "value": "180"
+            }
+          ]
+        },
+        {
+          "bom-ref": "asset-api-gateway",
+          "type": "gateway",
+          "name": "API Gateway",
+          "zone": "zone-dmz",
+          "description": "Edge gateway terminating TLS",
+          "properties": [
+            {
+              "name": "threatmodeler:x",
+              "value": "320"
+            },
+            {
+              "name": "threatmodeler:y",
+              "value": "180"
+            }
+          ]
+        },
+        {
+          "bom-ref": "asset-checkout-service",
+          "type": "service",
+          "name": "Checkout Service",
+          "zone": "zone-private-vpc",
+          "description": "Order and payment orchestration",
+          "properties": [
+            {
+              "name": "threatmodeler:x",
+              "value": "620"
+            },
+            {
+              "name": "threatmodeler:y",
+              "value": "120"
+            }
+          ]
+        },
+        {
+          "bom-ref": "asset-orders-db",
+          "type": "data-store",
+          "name": "Orders DB",
+          "zone": "zone-private-vpc",
+          "description": "Persistent order records",
+          "properties": [
+            {
+              "name": "threatmodeler:x",
+              "value": "900"
+            },
+            {
+              "name": "threatmodeler:y",
+              "value": "120"
+            }
+          ]
+        },
+        {
+          "bom-ref": "asset-payment-provider",
+          "type": "service",
+          "name": "Payment Provider",
+          "zone": "zone-internet",
+          "description": "External PCI payment processor",
+          "properties": [
+            {
+              "name": "threatmodeler:x",
+              "value": "620"
+            },
+            {
+              "name": "threatmodeler:y",
+              "value": "320"
+            }
+          ]
+        }
+      ],
+      "flows": [
+        {
+          "bom-ref": "flow-place-order",
+          "type": "data",
+          "name": "Place order",
+          "source": "asset-customer-browser",
+          "destination": "asset-api-gateway",
+          "encrypted": true,
+          "protocols": [
+            "HTTPS"
+          ]
+        },
+        {
+          "bom-ref": "flow-forward-request",
+          "type": "data",
+          "name": "Forward request",
+          "source": "asset-api-gateway",
+          "destination": "asset-checkout-service",
+          "encrypted": true,
+          "protocols": [
+            "HTTPS"
+          ]
+        },
+        {
+          "bom-ref": "flow-persist-order",
+          "type": "data",
+          "name": "Persist order",
+          "source": "asset-checkout-service",
+          "destination": "asset-orders-db",
+          "encrypted": true,
+          "protocols": [
+            "TLS"
+          ]
+        },
+        {
+          "bom-ref": "flow-charge-card",
+          "type": "financial",
+          "name": "Charge card",
+          "source": "asset-checkout-service",
+          "destination": "asset-payment-provider",
+          "encrypted": true,
+          "protocols": [
+            "HTTPS"
+          ]
+        }
+      ],
+      "assumptions": [
+        {
+          "bom-ref": "assumption-tls",
+          "description": "TLS 1.2+ is enforced at the API gateway and payment provider."
+        },
+        {
+          "bom-ref": "assumption-tokenization",
+          "description": "Cardholder data is tokenized; PAN is never stored in Orders DB."
+        }
+      ]
+    }
+  ],
+  "threats": {
+    "methodologies": [
+      "STRIDE"
+    ],
+    "threats": [
+      {
+        "bom-ref": "threat-api-spoofing",
+        "name": "API key theft enables service spoofing",
+        "description": "Stolen gateway credentials allow an attacker to impersonate trusted callers.",
+        "categories": [
+          {
+            "taxonomy": "STRIDE",
+            "category": "spoofing"
+          }
+        ],
+        "affectedAssets": [
+          "asset-api-gateway",
+          "asset-checkout-service"
+        ]
+      },
+      {
+        "bom-ref": "threat-order-tampering",
+        "name": "Order amount tampering in transit",
+        "description": "An attacker modifies order totals between the browser and checkout service.",
+        "categories": [
+          {
+            "taxonomy": "STRIDE",
+            "category": "tampering"
+          }
+        ],
+        "affectedAssets": [
+          "asset-checkout-service",
+          "asset-customer-browser"
+        ]
+      },
+      {
+        "bom-ref": "threat-db-disclosure",
+        "name": "Orders DB data disclosure",
+        "description": "Unauthorized query access exposes customer PII and order history.",
+        "categories": [
+          {
+            "taxonomy": "STRIDE",
+            "category": "information-disclosure"
+          }
+        ],
+        "affectedAssets": [
+          "asset-orders-db"
+        ]
+      },
+      {
+        "bom-ref": "threat-checkout-dos",
+        "name": "Checkout service exhaustion",
+        "description": "Flooding the checkout API degrades or denies order placement.",
+        "categories": [
+          {
+            "taxonomy": "STRIDE",
+            "category": "denial-of-service"
+          }
+        ],
+        "affectedAssets": [
+          "asset-checkout-service",
+          "asset-api-gateway"
+        ]
+      },
+      {
+        "bom-ref": "threat-iam-eop",
+        "name": "Privilege escalation via misconfigured IAM",
+        "description": "Over-privileged service roles allow lateral movement into Orders DB.",
+        "categories": [
+          {
+            "taxonomy": "STRIDE",
+            "category": "elevation-of-privilege"
+          }
+        ],
+        "affectedAssets": [
+          "asset-checkout-service",
+          "asset-orders-db"
+        ]
+      }
+    ],
+    "scenarios": [
+      {
+        "bom-ref": "scenario-spoofed-callbacks",
+        "name": "Attacker spoofs merchant callbacks",
+        "description": "External attacker uses leaked API credentials to forge payment callbacks.",
+        "threats": [
+          "threat-api-spoofing"
+        ],
+        "intent": "targeted",
+        "accessLevel": "external",
+        "affectedAssets": [
+          "asset-api-gateway",
+          "asset-checkout-service"
+        ],
+        "likelihood": {
+          "level": "medium"
+        },
+        "impact": {
+          "level": "major",
+          "polarity": "harm"
+        },
+        "riskScore": {
+          "level": "medium",
+          "methodology": "qualitative-matrix"
+        }
+      },
+      {
+        "bom-ref": "scenario-insider-exfil",
+        "name": "Insider exfiltrates order records",
+        "description": "Privileged insider queries Orders DB and exports PII.",
+        "threats": [
+          "threat-db-disclosure",
+          "threat-iam-eop"
+        ],
+        "intent": "opportunistic",
+        "accessLevel": "privileged",
+        "affectedAssets": [
+          "asset-orders-db"
+        ],
+        "likelihood": {
+          "level": "low"
+        },
+        "impact": {
+          "level": "catastrophic",
+          "polarity": "harm"
+        },
+        "riskScore": {
+          "level": "medium",
+          "methodology": "qualitative-matrix"
+        }
+      }
+    ]
+  },
+  "risks": {
+    "risks": [
+      {
+        "bom-ref": "risk-fraudulent-orders",
+        "domains": [
+          {
+            "type": "security"
+          }
+        ],
+        "name": "Fraudulent order fulfillment",
+        "statement": "If an attacker spoofs trusted API callers, then fraudulent orders may be fulfilled, causing financial loss and customer distrust.",
+        "relatedThreats": [
+          "threat-api-spoofing",
+          "scenario-spoofed-callbacks"
+        ],
+        "affects": [
+          "asset-checkout-service"
+        ],
+        "inherentRisk": {
+          "likelihood": {
+            "level": "medium"
+          },
+          "impact": {
+            "level": "major",
+            "polarity": "harm"
+          },
+          "score": {
+            "level": "high",
+            "methodology": "qualitative-matrix"
+          }
+        },
+        "residualRisk": {
+          "likelihood": {
+            "level": "low"
+          },
+          "impact": {
+            "level": "moderate",
+            "polarity": "harm"
+          },
+          "score": {
+            "level": "medium",
+            "methodology": "qualitative-matrix"
+          }
+        },
+        "responses": [
+          {
+            "bom-ref": "response-mtls-tokens",
+            "strategy": "reduce",
+            "description": "Require mTLS and short-lived signed tokens for service-to-service calls; rotate keys automatically.",
+            "cost": "medium",
+            "addresses": [
+              "threat-api-spoofing"
+            ]
+          }
+        ]
+      },
+      {
+        "bom-ref": "risk-pii-breach",
+        "domains": [
+          {
+            "type": "privacy"
+          },
+          {
+            "type": "security"
+          }
+        ],
+        "name": "Customer PII breach",
+        "statement": "If Orders DB access controls fail, then customer PII may be disclosed, triggering regulatory penalties.",
+        "relatedThreats": [
+          "threat-db-disclosure",
+          "threat-iam-eop",
+          "scenario-insider-exfil"
+        ],
+        "affects": [
+          "asset-orders-db"
+        ],
+        "inherentRisk": {
+          "likelihood": {
+            "level": "low"
+          },
+          "impact": {
+            "level": "catastrophic",
+            "polarity": "harm"
+          },
+          "score": {
+            "level": "high",
+            "methodology": "qualitative-matrix"
+          }
+        },
+        "residualRisk": {
+          "likelihood": {
+            "level": "very-low"
+          },
+          "impact": {
+            "level": "major",
+            "polarity": "harm"
+          },
+          "score": {
+            "level": "medium",
+            "methodology": "qualitative-matrix"
+          }
+        },
+        "responses": [
+          {
+            "bom-ref": "response-least-privilege",
+            "strategy": "reduce",
+            "description": "Enforce least-privilege IAM, column-level encryption for PII, and query auditing.",
+            "cost": "high",
+            "addresses": [
+              "threat-db-disclosure"
+            ]
+          },
+          {
+            "bom-ref": "response-cyber-insurance",
+            "strategy": "transfer",
+            "description": "Maintain cyber insurance covering privacy incidents.",
+            "cost": "medium"
+          }
+        ]
+      }
+    ]
+  }
+}
