@@ -76,9 +76,21 @@ Open the URL Vite prints (usually http://localhost:5173).
 ## CI & GitHub Pages
 
 - **CI** (`.github/workflows/ci.yml`) runs `npm run build` and `npm run validate:example` on pushes and pull requests.
-- **Pages** (`.github/workflows/pages.yml`) deploys `dist/` to GitHub Pages on pushes to `main`.
+- **Pages site files** are on the `gh-pages` branch (built with `npm run build:pages`).
+- **Actions workflow** (`.github/workflows/pages.yml`) can also deploy via GitHub Actions once Pages is enabled.
 
-After the first push, enable Pages in the repo: **Settings → Pages → Source: GitHub Actions**.
+### Enable the site (one-time)
+
+1. Open **[Settings → Pages](https://github.com/Mehrn0ush/tmbom-studio/settings/pages)**
+2. Under **Build and deployment → Source**, choose **Deploy from a branch**
+3. Branch: **`gh-pages`** / folder: **`/ (root)`** → **Save**
+
+After a minute, open:
+
+- https://mehrn0ush.github.io/tmbom-studio/
+- https://mehrn0ush.github.io/tmbom-studio/?example=checkout-api
+
+(Alternatively set Source to **GitHub Actions** if you prefer the workflow-only path.)
 
 ---
 
