@@ -1,3 +1,6 @@
+# GitHub Actions Pages deploy (artifact + deploy-pages).
+# Manual/orphan branch deploys also supported: build with `npm run build:pages`
+# and push the contents of `dist/` to the `gh-pages` branch.
 name: Deploy GitHub Pages
 
 on:
