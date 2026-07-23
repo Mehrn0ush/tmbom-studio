@@ -5,7 +5,7 @@
   "serialNumber": "urn:uuid:a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-07-23T11:00:50.434Z",
+    "timestamp": "2026-07-23T11:12:05.842Z",
     "component": {
       "type": "application",
       "name": "Checkout API",
@@ -271,11 +271,15 @@
       {
         "bom-ref": "threat-api-spoofing",
         "name": "API key theft enables service spoofing",
-        "description": "Stolen gateway credentials allow an attacker to impersonate trusted callers (STRIDE Spoofing; related to CAPEC-115 Authentication Bypass patterns).",
+        "description": "Stolen gateway credentials allow an attacker to impersonate trusted callers (STRIDE Spoofing; CAPEC-115 / ATT&CK Valid Accounts).",
         "categories": [
           {
             "taxonomy": "STRIDE",
             "category": "spoofing"
+          },
+          {
+            "taxonomy": "MITRE-ATTACK",
+            "category": "credential-access"
           }
         ],
         "affectedAssets": [
@@ -284,16 +288,24 @@
         ],
         "attackTrees": [
           "attack-tree-spoof-api"
+        ],
+        "attackPatterns": [
+          "capec-115-auth-bypass",
+          "capec-21-trusted-ids"
         ]
       },
       {
         "bom-ref": "threat-order-tampering",
         "name": "Order amount tampering in transit",
-        "description": "An attacker modifies order totals between the browser and checkout service (STRIDE Tampering; integrity failure on data flow).",
+        "description": "An attacker modifies order totals between the browser and checkout service (STRIDE Tampering).",
         "categories": [
           {
             "taxonomy": "STRIDE",
             "category": "tampering"
+          },
+          {
+            "taxonomy": "MITRE-ATTACK",
+            "category": "collection"
           }
         ],
         "affectedAssets": [
@@ -304,11 +316,15 @@
       {
         "bom-ref": "threat-db-disclosure",
         "name": "Orders DB data disclosure",
-        "description": "Unauthorized query access exposes customer PII and order history (STRIDE Information Disclosure).",
+        "description": "Unauthorized query access exposes customer PII and order history (STRIDE Information Disclosure; CAPEC-66).",
         "categories": [
           {
             "taxonomy": "STRIDE",
             "category": "information-disclosure"
+          },
+          {
+            "taxonomy": "MITRE-ATTACK",
+            "category": "exfiltration"
           }
         ],
         "affectedAssets": [
@@ -316,16 +332,23 @@
         ],
         "attackTrees": [
           "attack-tree-exfil-orders"
+        ],
+        "attackPatterns": [
+          "capec-66-sqli"
         ]
       },
       {
         "bom-ref": "threat-checkout-dos",
         "name": "Checkout service exhaustion",
-        "description": "Flooding or expensive operations deny order placement (STRIDE Denial of Service; related to CAPEC-125 Flooding).",
+        "description": "Flooding or expensive operations deny order placement (STRIDE Denial of Service; CAPEC-125).",
         "categories": [
           {
             "taxonomy": "STRIDE",
             "category": "denial-of-service"
+          },
+          {
+            "taxonomy": "MITRE-ATTACK",
+            "category": "impact"
           }
         ],
         "affectedAssets": [
@@ -334,6 +357,9 @@
         ],
         "attackTrees": [
           "attack-tree-dos-checkout"
+        ],
+        "attackPatterns": [
+          "capec-125-flooding"
         ]
       },
       {
@@ -344,6 +370,10 @@
           {
             "taxonomy": "STRIDE",
             "category": "elevation-of-privilege"
+          },
+          {
+            "taxonomy": "MITRE-ATTACK",
+            "category": "privilege-escalation"
           }
         ],
         "affectedAssets": [
@@ -500,6 +530,60 @@
           "level": "medium",
           "methodology": "qualitative-matrix"
         }
+      }
+    ],
+    "attackPatterns": [
+      {
+        "bom-ref": "capec-115-auth-bypass",
+        "name": "Authentication Bypass",
+        "capecId": 115,
+        "description": "An adversary bypasses authentication to access a target.",
+        "techniques": [
+          {
+            "id": "T1078",
+            "name": "Valid Accounts",
+            "tactic": "initial-access"
+          }
+        ]
+      },
+      {
+        "bom-ref": "capec-125-flooding",
+        "name": "Flooding",
+        "capecId": 125,
+        "description": "An adversary overwhelms a target with excessive traffic or requests.",
+        "techniques": [
+          {
+            "id": "T1498",
+            "name": "Network Denial of Service",
+            "tactic": "impact"
+          }
+        ]
+      },
+      {
+        "bom-ref": "capec-66-sqli",
+        "name": "SQL Injection",
+        "capecId": 66,
+        "description": "An adversary exploits insufficient input validation to inject SQL.",
+        "techniques": [
+          {
+            "id": "T1190",
+            "name": "Exploit Public-Facing Application",
+            "tactic": "initial-access"
+          }
+        ]
+      },
+      {
+        "bom-ref": "capec-21-trusted-ids",
+        "name": "Exploitation of Trusted Identifiers",
+        "capecId": 21,
+        "description": "An adversary abuses trusted identifiers or credentials.",
+        "techniques": [
+          {
+            "id": "T1550",
+            "name": "Use Alternate Authentication Material",
+            "tactic": "defense-evasion"
+          }
+        ]
       }
     ],
     "attackTrees": [

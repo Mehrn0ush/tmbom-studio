@@ -44,7 +44,7 @@ Schemas follow the CycloneDX [`2.0-dev-threatmodeling`](https://github.com/Cyclo
 | Area | Support |
 | --- | --- |
 | `blueprints` | Visual data-flow: assets, zones, trust boundaries, flows |
-| `threats` | STRIDE + LINDDUN catalogs, scenarios, attack trees |
+| `threats` | STRIDE + LINDDUN + MITRE ATT&CK categories; CAPEC `attackPatterns`; scenarios; attack trees |
 | `risks` | Statements, inherent/residual ratings, responses |
 | `session` | Workshop participants + `.session.json` package export |
 | `links` | BOM-Link URNs and SBOM / VEX external references |

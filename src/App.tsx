@@ -4,6 +4,7 @@ import { OverviewView } from './components/overview/OverviewView'
 import { BlueprintView } from './components/blueprint/BlueprintView'
 import { ThreatsView } from './components/threats/ThreatsView'
 import { AttackTreesView } from './components/threats/AttackTreesView'
+import { AttackPatternsView } from './components/threats/AttackPatternsView'
 import { ScenariosView } from './components/risks/ScenariosView'
 import { RisksView } from './components/risks/RisksView'
 import { SessionView } from './components/session/SessionView'
@@ -19,6 +20,7 @@ const NAV: Array<{ id: WorkspaceView; label: string }> = [
   { id: 'overview', label: 'Overview' },
   { id: 'blueprint', label: 'Blueprint' },
   { id: 'threats', label: 'Threats' },
+  { id: 'attack-patterns', label: 'CAPEC' },
   { id: 'attack-trees', label: 'Attack trees' },
   { id: 'scenarios', label: 'Scenarios' },
   { id: 'risks', label: 'Risks' },
@@ -32,6 +34,7 @@ const TITLES: Record<WorkspaceView, string> = {
   overview: 'Overview',
   blueprint: 'Architecture blueprint',
   threats: 'Threat catalog',
+  'attack-patterns': 'CAPEC attack patterns',
   'attack-trees': 'Attack trees',
   scenarios: 'Threat scenarios',
   risks: 'Risk register',
@@ -129,6 +132,7 @@ export default function App() {
           {view === 'overview' && <OverviewView />}
           {view === 'blueprint' && <BlueprintView />}
           {view === 'threats' && <ThreatsView />}
+          {view === 'attack-patterns' && <AttackPatternsView />}
           {view === 'attack-trees' && <AttackTreesView />}
           {view === 'scenarios' && <ScenariosView />}
           {view === 'risks' && <RisksView />}

@@ -1,8 +1,24 @@
 import { useMemo, useState } from 'react'
 import { useThreatModelStore } from '../../store/useThreatModelStore'
-import { LINDDUN_CATEGORIES, STRIDE_CATEGORIES } from '../../lib/catalog'
+import {
+  LINDDUN_CATEGORIES,
+  MITRE_ATTACK_CATEGORIES,
+  STRIDE_CATEGORIES,
+} from '../../lib/catalog'
 import { getPrimaryBlueprint } from '../../lib/bom'
-import type { Threat, ThreatTaxonomy } from '../../types/cyclonedx'
+import type { Methodology, Threat, ThreatTaxonomy } from '../../types/cyclonedx'
+
+function categoriesFor(taxonomy: ThreatTaxonomy) {
+  if (taxonomy === 'LINDDUN') return LINDDUN_CATEGORIES
+  if (taxonomy === 'MITRE-ATTACK') return MITRE_ATTACK_CATEGORIES
+  return STRIDE_CATEGORIES
+}
+
+function defaultCategory(taxonomy: ThreatTaxonomy): string {
+  if (taxonomy === 'LINDDUN') return 'linkability'
+  if (taxonomy === 'MITRE-ATTACK') return 'initial-access'
+  return 'spoofing'
+}
 
 export function ThreatsView() {
   const bom = useThreatModelStore((s) => s.bom)
@@ -16,14 +32,14 @@ export function ThreatsView() {
   const threats = bom.threats?.threats ?? []
   const assets = getPrimaryBlueprint(bom).assets ?? []
   const trees = bom.threats?.attackTrees ?? []
+  const patterns = bom.threats?.attackPatterns ?? []
   const selected = threats.find((t) => t['bom-ref'] === selectedRef)
 
   const [taxonomy, setTaxonomy] = useState<ThreatTaxonomy>('STRIDE')
   const [name, setName] = useState('')
   const [category, setCategory] = useState<string>('spoofing')
 
-  const categories =
-    taxonomy === 'LINDDUN' ? LINDDUN_CATEGORIES : STRIDE_CATEGORIES
+  const categories = categoriesFor(taxonomy)
 
   const byCategory = useMemo(() => {
     const map: Record<string, Threat[]> = Object.fromEntries(
@@ -39,10 +55,11 @@ export function ThreatsView() {
     return map
   }, [threats, taxonomy, categories])
 
-  const ensureMethodology = (value: 'STRIDE' | 'LINDDUN') => {
+  const ensureMethodology = (value: Methodology) => {
     const current = bom.threats?.methodologies ?? []
     const names = current.map((m) => (typeof m === 'string' ? m : m.name))
-    if (!names.includes(value)) {
+    const label = typeof value === 'string' ? value : value.name
+    if (!names.includes(label)) {
       setMethodologies([...current, value])
     }
   }
@@ -58,13 +75,12 @@ export function ThreatsView() {
               onChange={(e) => {
                 const next = e.target.value as ThreatTaxonomy
                 setTaxonomy(next)
-                setCategory(
-                  next === 'LINDDUN' ? 'linkability' : 'spoofing',
-                )
+                setCategory(defaultCategory(next))
               }}
             >
               <option value="STRIDE">STRIDE (security)</option>
               <option value="LINDDUN">LINDDUN (privacy)</option>
+              <option value="MITRE-ATTACK">MITRE ATT&amp;CK (tactics)</option>
             </select>
           </div>
           <div className="field" style={{ flex: 1 }}>
@@ -73,9 +89,11 @@ export function ThreatsView() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={
-                taxonomy === 'LINDDUN'
-                  ? 'e.g. Cross-service identity correlation'
-                  : 'e.g. Credential stuffing against login'
+                taxonomy === 'MITRE-ATTACK'
+                  ? 'e.g. Valid account reuse for API access'
+                  : taxonomy === 'LINDDUN'
+                    ? 'e.g. Cross-service identity correlation'
+                    : 'e.g. Credential stuffing against login'
               }
             />
           </div>
@@ -97,7 +115,9 @@ export function ThreatsView() {
             type="button"
             onClick={() => {
               if (!name.trim()) return
-              ensureMethodology(taxonomy === 'LINDDUN' ? 'LINDDUN' : 'STRIDE')
+              if (taxonomy === 'STRIDE' || taxonomy === 'LINDDUN') {
+                ensureMethodology(taxonomy)
+              }
               addThreat({
                 name: name.trim(),
                 categories: [{ taxonomy, category }],
@@ -209,6 +229,13 @@ export function ThreatsView() {
                   </option>
                 ))}
               </optgroup>
+              <optgroup label="MITRE ATT&CK">
+                {MITRE_ATTACK_CATEGORIES.map((c) => (
+                  <option key={c.id} value={`MITRE-ATTACK:${c.id}`}>
+                    {c.label}
+                  </option>
+                ))}
+              </optgroup>
             </select>
           </div>
           <div className="field">
@@ -227,6 +254,27 @@ export function ThreatsView() {
               {assets.map((a) => (
                 <option key={a['bom-ref']} value={a['bom-ref']}>
                   {a.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label>CAPEC attack patterns</label>
+            <select
+              multiple
+              value={selected.attackPatterns ?? []}
+              onChange={(e) => {
+                const values = Array.from(e.target.selectedOptions).map(
+                  (o) => o.value,
+                )
+                updateThreat(selected['bom-ref'], { attackPatterns: values })
+              }}
+              style={{ minHeight: 90 }}
+            >
+              {patterns.map((p) => (
+                <option key={p['bom-ref']} value={p['bom-ref']}>
+                  {p.capecId != null ? `CAPEC-${p.capecId}: ` : ''}
+                  {p.name}
                 </option>
               ))}
             </select>

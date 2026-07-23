@@ -100,6 +100,86 @@ export const LINDDUN_CATEGORIES: Array<{
   },
 ]
 
+/** MITRE ATT&CK Enterprise tactics (CycloneDX MITRE-ATTACK threat categories) */
+export const MITRE_ATTACK_CATEGORIES: Array<{
+  id: string
+  label: string
+  letter: string
+  description: string
+}> = [
+  { id: 'reconnaissance', label: 'Reconnaissance', letter: 'TA0043', description: 'Gather information to plan future operations.' },
+  { id: 'resource-development', label: 'Resource Development', letter: 'TA0042', description: 'Establish resources to support operations.' },
+  { id: 'initial-access', label: 'Initial Access', letter: 'TA0001', description: 'Gain an initial foothold.' },
+  { id: 'execution', label: 'Execution', letter: 'TA0002', description: 'Run malicious code.' },
+  { id: 'persistence', label: 'Persistence', letter: 'TA0003', description: 'Maintain foothold.' },
+  { id: 'privilege-escalation', label: 'Privilege Escalation', letter: 'TA0004', description: 'Gain higher-level permissions.' },
+  { id: 'defense-evasion', label: 'Defense Evasion', letter: 'TA0005', description: 'Avoid detection.' },
+  { id: 'credential-access', label: 'Credential Access', letter: 'TA0006', description: 'Steal account credentials.' },
+  { id: 'discovery', label: 'Discovery', letter: 'TA0007', description: 'Learn the environment.' },
+  { id: 'lateral-movement', label: 'Lateral Movement', letter: 'TA0008', description: 'Move through the environment.' },
+  { id: 'collection', label: 'Collection', letter: 'TA0009', description: 'Gather data of interest.' },
+  { id: 'command-and-control', label: 'Command and Control', letter: 'TA0011', description: 'Communicate with compromised systems.' },
+  { id: 'exfiltration', label: 'Exfiltration', letter: 'TA0010', description: 'Steal data.' },
+  { id: 'impact', label: 'Impact', letter: 'TA0040', description: 'Manipulate, interrupt, or destroy systems/data.' },
+]
+
+/** Curated CAPEC entries for quick add (Common Attack Pattern Enumeration and Classification) */
+export const CAPEC_CATALOG: Array<{
+  capecId: number
+  name: string
+  description: string
+  techniques?: Array<{ id: string; name: string; tactic: string }>
+}> = [
+  {
+    capecId: 115,
+    name: 'Authentication Bypass',
+    description: 'An adversary bypasses authentication to access a target.',
+    techniques: [
+      { id: 'T1078', name: 'Valid Accounts', tactic: 'initial-access' },
+    ],
+  },
+  {
+    capecId: 125,
+    name: 'Flooding',
+    description: 'An adversary overwhelms a target with excessive traffic or requests.',
+    techniques: [
+      { id: 'T1498', name: 'Network Denial of Service', tactic: 'impact' },
+    ],
+  },
+  {
+    capecId: 66,
+    name: 'SQL Injection',
+    description: 'An adversary exploits insufficient input validation to inject SQL.',
+    techniques: [
+      { id: 'T1190', name: 'Exploit Public-Facing Application', tactic: 'initial-access' },
+    ],
+  },
+  {
+    capecId: 21,
+    name: 'Exploitation of Trusted Identifiers',
+    description: 'An adversary abuses trusted identifiers or credentials.',
+    techniques: [
+      { id: 'T1550', name: 'Use Alternate Authentication Material', tactic: 'defense-evasion' },
+    ],
+  },
+  {
+    capecId: 94,
+    name: 'Adversary in the Middle (AiTM)',
+    description: 'An adversary positions between parties to tamper with or observe communications.',
+    techniques: [
+      { id: 'T1557', name: 'Adversary-in-the-Middle', tactic: 'credential-access' },
+    ],
+  },
+  {
+    capecId: 593,
+    name: 'Session Hijacking',
+    description: 'An adversary takes over an authenticated session.',
+    techniques: [
+      { id: 'T1539', name: 'Steal Web Session Cookie', tactic: 'credential-access' },
+    ],
+  },
+]
+
 /** Common CycloneDX external reference types for supply-chain linkage */
 export const LINK_REFERENCE_TYPES = [
   { id: 'bom', label: 'BOM / SBOM', hint: 'Link to another CycloneDX BOM (often via BOM-Link URN)' },

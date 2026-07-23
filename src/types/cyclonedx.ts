@@ -323,10 +323,29 @@ export interface Threat {
   source?: string
   categories?: ThreatCategory[]
   affectedAssets?: RefLinkType[]
+  attackPatterns?: RefLinkType[]
   attackTrees?: RefLinkType[]
   mitigations?: RefLinkType[]
   properties?: Property[]
   externalReferences?: ExternalReference[]
+}
+
+export interface AttackTechnique {
+  id?: string
+  name?: string
+  tactic?: string
+  procedure?: string
+}
+
+export interface AttackPattern {
+  'bom-ref': RefType
+  name: string
+  description?: string
+  capecId?: number
+  prerequisites?: string[]
+  techniques?: AttackTechnique[]
+  mitigations?: RefLinkType[]
+  examples?: string[]
 }
 
 export interface ThreatScenario {
@@ -372,6 +391,7 @@ export interface Risk {
 export interface ThreatsSection {
   threats?: Threat[]
   scenarios?: ThreatScenario[]
+  attackPatterns?: AttackPattern[]
   attackTrees?: AttackTree[]
   methodologies?: Methodology[]
   properties?: Property[]
@@ -420,6 +440,7 @@ export type WorkspaceView =
   | 'threats'
   | 'scenarios'
   | 'attack-trees'
+  | 'attack-patterns'
   | 'risks'
   | 'session'
   | 'links'

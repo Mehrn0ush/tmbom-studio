@@ -37,6 +37,10 @@ const STABLE = {
   tDos: 'threat-checkout-dos',
   tEop: 'threat-iam-eop',
   tLink: 'threat-order-linkability',
+  apAuthBypass: 'capec-115-auth-bypass',
+  apFlood: 'capec-125-flooding',
+  apSqli: 'capec-66-sqli',
+  apTrustedId: 'capec-21-trusted-ids',
   atSpoof: 'attack-tree-spoof-api',
   atSpoofRoot: 'at-node-spoof-goal',
   atSpoofPhish: 'at-node-phish-keys',
@@ -189,43 +193,61 @@ export function createSampleBom(): CycloneDxBom {
     'bom-ref': STABLE.tSpoof,
     name: 'API key theft enables service spoofing',
     description:
-      'Stolen gateway credentials allow an attacker to impersonate trusted callers (STRIDE Spoofing; related to CAPEC-115 Authentication Bypass patterns).',
-    categories: [{ taxonomy: 'STRIDE', category: 'spoofing' }],
+      'Stolen gateway credentials allow an attacker to impersonate trusted callers (STRIDE Spoofing; CAPEC-115 / ATT&CK Valid Accounts).',
+    categories: [
+      { taxonomy: 'STRIDE', category: 'spoofing' },
+      { taxonomy: 'MITRE-ATTACK', category: 'credential-access' },
+    ],
     affectedAssets: [STABLE.gateway, STABLE.checkout],
     attackTrees: [STABLE.atSpoof],
+    attackPatterns: [STABLE.apAuthBypass, STABLE.apTrustedId],
   })
   const tTamper = createThreat({
     'bom-ref': STABLE.tTamper,
     name: 'Order amount tampering in transit',
     description:
-      'An attacker modifies order totals between the browser and checkout service (STRIDE Tampering; integrity failure on data flow).',
-    categories: [{ taxonomy: 'STRIDE', category: 'tampering' }],
+      'An attacker modifies order totals between the browser and checkout service (STRIDE Tampering).',
+    categories: [
+      { taxonomy: 'STRIDE', category: 'tampering' },
+      { taxonomy: 'MITRE-ATTACK', category: 'collection' },
+    ],
     affectedAssets: [STABLE.checkout, STABLE.customer],
   })
   const tDisclose = createThreat({
     'bom-ref': STABLE.tDisclose,
     name: 'Orders DB data disclosure',
     description:
-      'Unauthorized query access exposes customer PII and order history (STRIDE Information Disclosure).',
-    categories: [{ taxonomy: 'STRIDE', category: 'information-disclosure' }],
+      'Unauthorized query access exposes customer PII and order history (STRIDE Information Disclosure; CAPEC-66).',
+    categories: [
+      { taxonomy: 'STRIDE', category: 'information-disclosure' },
+      { taxonomy: 'MITRE-ATTACK', category: 'exfiltration' },
+    ],
     affectedAssets: [STABLE.ordersDb],
     attackTrees: [STABLE.atDisclose],
+    attackPatterns: [STABLE.apSqli],
   })
   const tDos = createThreat({
     'bom-ref': STABLE.tDos,
     name: 'Checkout service exhaustion',
     description:
-      'Flooding or expensive operations deny order placement (STRIDE Denial of Service; related to CAPEC-125 Flooding).',
-    categories: [{ taxonomy: 'STRIDE', category: 'denial-of-service' }],
+      'Flooding or expensive operations deny order placement (STRIDE Denial of Service; CAPEC-125).',
+    categories: [
+      { taxonomy: 'STRIDE', category: 'denial-of-service' },
+      { taxonomy: 'MITRE-ATTACK', category: 'impact' },
+    ],
     affectedAssets: [STABLE.checkout, STABLE.gateway],
     attackTrees: [STABLE.atDos],
+    attackPatterns: [STABLE.apFlood],
   })
   const tEop = createThreat({
     'bom-ref': STABLE.tEop,
     name: 'Privilege escalation via misconfigured IAM',
     description:
       'Over-privileged service roles allow lateral movement into Orders DB (STRIDE Elevation of Privilege).',
-    categories: [{ taxonomy: 'STRIDE', category: 'elevation-of-privilege' }],
+    categories: [
+      { taxonomy: 'STRIDE', category: 'elevation-of-privilege' },
+      { taxonomy: 'MITRE-ATTACK', category: 'privilege-escalation' },
+    ],
     affectedAssets: [STABLE.checkout, STABLE.ordersDb],
   })
   const tLink = createThreat({
@@ -236,6 +258,53 @@ export function createSampleBom(): CycloneDxBom {
     categories: [{ taxonomy: 'LINDDUN', category: 'linkability' }],
     affectedAssets: [STABLE.ordersDb, STABLE.checkout],
   })
+
+  const attackPatterns = [
+    {
+      'bom-ref': STABLE.apAuthBypass,
+      name: 'Authentication Bypass',
+      capecId: 115,
+      description: 'An adversary bypasses authentication to access a target.',
+      techniques: [
+        { id: 'T1078', name: 'Valid Accounts', tactic: 'initial-access' },
+      ],
+    },
+    {
+      'bom-ref': STABLE.apFlood,
+      name: 'Flooding',
+      capecId: 125,
+      description: 'An adversary overwhelms a target with excessive traffic or requests.',
+      techniques: [
+        { id: 'T1498', name: 'Network Denial of Service', tactic: 'impact' },
+      ],
+    },
+    {
+      'bom-ref': STABLE.apSqli,
+      name: 'SQL Injection',
+      capecId: 66,
+      description: 'An adversary exploits insufficient input validation to inject SQL.',
+      techniques: [
+        {
+          id: 'T1190',
+          name: 'Exploit Public-Facing Application',
+          tactic: 'initial-access',
+        },
+      ],
+    },
+    {
+      'bom-ref': STABLE.apTrustedId,
+      name: 'Exploitation of Trusted Identifiers',
+      capecId: 21,
+      description: 'An adversary abuses trusted identifiers or credentials.',
+      techniques: [
+        {
+          id: 'T1550',
+          name: 'Use Alternate Authentication Material',
+          tactic: 'defense-evasion',
+        },
+      ],
+    },
+  ]
 
   /** Schneier-style attack trees (CycloneDX attack-tree methodology, AND/OR nodes) */
   const attackTrees = [
@@ -552,6 +621,7 @@ export function createSampleBom(): CycloneDxBom {
       methodologies: ['STRIDE', 'LINDDUN', 'attack-tree'],
       threats: [tSpoof, tTamper, tDisclose, tDos, tEop, tLink],
       scenarios: [scSpoof, scInsider, scTamper, scDos, scLink],
+      attackPatterns,
       attackTrees,
     },
     risks: {

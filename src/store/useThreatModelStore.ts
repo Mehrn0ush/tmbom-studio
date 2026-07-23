@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
   Asset,
+  AttackPattern,
   AttackTree,
   AttackTreeNode,
   Blueprint,
@@ -91,6 +92,9 @@ interface ThreatModelState {
     patch: Partial<AttackTreeNode>,
   ) => void
   removeAttackTreeNode: (treeRef: string, nodeRef: string) => void
+  addAttackPattern: (partial: Partial<AttackPattern> & { name: string }) => string
+  updateAttackPattern: (ref: string, patch: Partial<AttackPattern>) => void
+  removeAttackPattern: (ref: string) => void
   addRisk: (
     partial: Partial<Risk> & { name: string; statement: string },
   ) => string
@@ -567,6 +571,53 @@ export const useThreatModelStore = create<ThreatModelState>()(
           return {
             bom,
             selectedRef: get().selectedRef === nodeRef ? null : get().selectedRef,
+          }
+        }),
+
+      addAttackPattern: (partial) => {
+        const pattern: AttackPattern = {
+          'bom-ref': bomRef('capec'),
+          ...partial,
+        }
+        set((s) => {
+          const bom = structuredClone(s.bom)
+          bom.threats ??= { threats: [], scenarios: [], attackPatterns: [] }
+          bom.threats.attackPatterns = [
+            ...(bom.threats.attackPatterns ?? []),
+            pattern,
+          ]
+          bumpVersion(bom)
+          return { bom, selectedRef: pattern['bom-ref'], view: 'attack-patterns' }
+        })
+        return pattern['bom-ref']
+      },
+
+      updateAttackPattern: (ref, patch) =>
+        set((s) => {
+          const bom = structuredClone(s.bom)
+          if (!bom.threats?.attackPatterns) return s
+          bom.threats.attackPatterns = bom.threats.attackPatterns.map((p) =>
+            p['bom-ref'] === ref ? { ...p, ...patch } : p,
+          )
+          bumpVersion(bom)
+          return { bom }
+        }),
+
+      removeAttackPattern: (ref) =>
+        set((s) => {
+          const bom = structuredClone(s.bom)
+          if (!bom.threats) return s
+          bom.threats.attackPatterns = (bom.threats.attackPatterns ?? []).filter(
+            (p) => p['bom-ref'] !== ref,
+          )
+          bom.threats.threats = (bom.threats.threats ?? []).map((th) => ({
+            ...th,
+            attackPatterns: th.attackPatterns?.filter((r) => r !== ref),
+          }))
+          bumpVersion(bom)
+          return {
+            bom,
+            selectedRef: get().selectedRef === ref ? null : get().selectedRef,
           }
         }),
 
