@@ -3,8 +3,11 @@ import type { WorkspaceView } from './types/cyclonedx'
 import { OverviewView } from './components/overview/OverviewView'
 import { BlueprintView } from './components/blueprint/BlueprintView'
 import { ThreatsView } from './components/threats/ThreatsView'
+import { AttackTreesView } from './components/threats/AttackTreesView'
 import { ScenariosView } from './components/risks/ScenariosView'
 import { RisksView } from './components/risks/RisksView'
+import { SessionView } from './components/session/SessionView'
+import { LinksView } from './components/links/LinksView'
 import { ReportView } from './components/report/ReportView'
 import {
   ExportView,
@@ -16,8 +19,11 @@ const NAV: Array<{ id: WorkspaceView; label: string }> = [
   { id: 'overview', label: 'Overview' },
   { id: 'blueprint', label: 'Blueprint' },
   { id: 'threats', label: 'Threats' },
+  { id: 'attack-trees', label: 'Attack trees' },
   { id: 'scenarios', label: 'Scenarios' },
   { id: 'risks', label: 'Risks' },
+  { id: 'session', label: 'Session' },
+  { id: 'links', label: 'Links' },
   { id: 'report', label: 'Report' },
   { id: 'export', label: 'Projects' },
 ]
@@ -26,8 +32,11 @@ const TITLES: Record<WorkspaceView, string> = {
   overview: 'Overview',
   blueprint: 'Architecture blueprint',
   threats: 'Threat catalog',
+  'attack-trees': 'Attack trees',
   scenarios: 'Threat scenarios',
   risks: 'Risk register',
+  session: 'Workshop session',
+  links: 'BOM-Link & references',
   report: 'Risk report',
   export: 'Projects / Export',
 }
@@ -120,8 +129,11 @@ export default function App() {
           {view === 'overview' && <OverviewView />}
           {view === 'blueprint' && <BlueprintView />}
           {view === 'threats' && <ThreatsView />}
+          {view === 'attack-trees' && <AttackTreesView />}
           {view === 'scenarios' && <ScenariosView />}
           {view === 'risks' && <RisksView />}
+          {view === 'session' && <SessionView />}
+          {view === 'links' && <LinksView />}
           {view === 'report' && <ReportView />}
           {view === 'export' && <ExportView />}
         </main>

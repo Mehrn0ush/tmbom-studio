@@ -44,8 +44,10 @@ Schemas follow the CycloneDX [`2.0-dev-threatmodeling`](https://github.com/Cyclo
 | Area | Support |
 | --- | --- |
 | `blueprints` | Visual data-flow: assets, zones, trust boundaries, flows |
-| `threats` | STRIDE catalog, methodologies, scenarios |
+| `threats` | STRIDE + LINDDUN catalogs, scenarios, attack trees |
 | `risks` | Statements, inherent/residual ratings, responses |
+| `session` | Workshop participants + `.session.json` package export |
+| `links` | BOM-Link URNs and SBOM / VEX external references |
 | `report` | Printable / Save-as-PDF risk summary for reviews |
 | Persistence | Save/Open project files + recent drafts (+ `localStorage` cache) |
 | Validation | Structural checks in the UI before save; sample checked in CI |
@@ -97,9 +99,9 @@ One-time Pages setting (if the site is not live yet):
 
 ## Roadmap (later)
 
-- Multi-user / session export workflows
-- Deeper LINDDUN and attack-tree editing
-- BOM-Link integration with SBOMs / VEX
+- Real-time multi-user editing (beyond session packages)
+- Richer attack-path / CAPEC library UX
+- Deeper automated SBOM↔TM-BOM correlation
 
 ---
 

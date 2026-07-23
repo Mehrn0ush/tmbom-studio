@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useThreatModelStore } from '../../store/useThreatModelStore'
-import { STRIDE_CATEGORIES } from '../../lib/catalog'
+import { LINDDUN_CATEGORIES, STRIDE_CATEGORIES } from '../../lib/catalog'
 import { getPrimaryBlueprint } from '../../lib/bom'
-import type { StrideCategory, Threat } from '../../types/cyclonedx'
+import type { Threat, ThreatTaxonomy } from '../../types/cyclonedx'
 
 export function ThreatsView() {
   const bom = useThreatModelStore((s) => s.bom)
@@ -11,50 +11,81 @@ export function ThreatsView() {
   const addThreat = useThreatModelStore((s) => s.addThreat)
   const updateThreat = useThreatModelStore((s) => s.updateThreat)
   const removeThreat = useThreatModelStore((s) => s.removeThreat)
+  const setMethodologies = useThreatModelStore((s) => s.setMethodologies)
 
   const threats = bom.threats?.threats ?? []
   const assets = getPrimaryBlueprint(bom).assets ?? []
+  const trees = bom.threats?.attackTrees ?? []
   const selected = threats.find((t) => t['bom-ref'] === selectedRef)
 
+  const [taxonomy, setTaxonomy] = useState<ThreatTaxonomy>('STRIDE')
   const [name, setName] = useState('')
-  const [category, setCategory] = useState<StrideCategory>('spoofing')
+  const [category, setCategory] = useState<string>('spoofing')
 
-  const byStride = useMemo(() => {
-    const map = Object.fromEntries(
-      STRIDE_CATEGORIES.map((c) => [c.id, [] as Threat[]]),
-    ) as Record<StrideCategory, Threat[]>
+  const categories =
+    taxonomy === 'LINDDUN' ? LINDDUN_CATEGORIES : STRIDE_CATEGORIES
+
+  const byCategory = useMemo(() => {
+    const map: Record<string, Threat[]> = Object.fromEntries(
+      categories.map((c) => [c.id, [] as Threat[]]),
+    )
     for (const t of threats) {
       const cats =
         t.categories
-          ?.filter((c) => c.taxonomy === 'STRIDE')
-          .map((c) => c.category as StrideCategory) ?? []
-      if (!cats.length) continue
-      for (const c of cats) {
-        map[c]?.push(t)
-      }
+          ?.filter((c) => c.taxonomy === taxonomy)
+          .map((c) => c.category) ?? []
+      for (const c of cats) map[c]?.push(t)
     }
     return map
-  }, [threats])
+  }, [threats, taxonomy, categories])
+
+  const ensureMethodology = (value: 'STRIDE' | 'LINDDUN') => {
+    const current = bom.threats?.methodologies ?? []
+    const names = current.map((m) => (typeof m === 'string' ? m : m.name))
+    if (!names.includes(value)) {
+      setMethodologies([...current, value])
+    }
+  }
 
   return (
     <div className="stack">
       <div className="panel panel-pad">
         <div className="btn-row" style={{ alignItems: 'end' }}>
+          <div className="field">
+            <label>Taxonomy</label>
+            <select
+              value={taxonomy}
+              onChange={(e) => {
+                const next = e.target.value as ThreatTaxonomy
+                setTaxonomy(next)
+                setCategory(
+                  next === 'LINDDUN' ? 'linkability' : 'spoofing',
+                )
+              }}
+            >
+              <option value="STRIDE">STRIDE (security)</option>
+              <option value="LINDDUN">LINDDUN (privacy)</option>
+            </select>
+          </div>
           <div className="field" style={{ flex: 1 }}>
             <label>Threat name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Credential stuffing against login"
+              placeholder={
+                taxonomy === 'LINDDUN'
+                  ? 'e.g. Cross-service identity correlation'
+                  : 'e.g. Credential stuffing against login'
+              }
             />
           </div>
           <div className="field">
-            <label>STRIDE</label>
+            <label>Category</label>
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value as StrideCategory)}
+              onChange={(e) => setCategory(e.target.value)}
             >
-              {STRIDE_CATEGORIES.map((c) => (
+              {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.letter} — {c.label}
                 </option>
@@ -66,10 +97,11 @@ export function ThreatsView() {
             type="button"
             onClick={() => {
               if (!name.trim()) return
+              ensureMethodology(taxonomy === 'LINDDUN' ? 'LINDDUN' : 'STRIDE')
               addThreat({
                 name: name.trim(),
-                categories: [{ taxonomy: 'STRIDE', category }],
-                description: STRIDE_CATEGORIES.find((c) => c.id === category)
+                categories: [{ taxonomy, category }],
+                description: categories.find((c) => c.id === category)
                   ?.description,
               })
               setName('')
@@ -83,24 +115,24 @@ export function ThreatsView() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
           gap: '0.75rem',
         }}
       >
-        {STRIDE_CATEGORIES.map((c) => (
+        {categories.map((c) => (
           <div key={c.id} className="panel panel-pad">
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <span className="badge badge-stride">{c.letter}</span>
               <strong>{c.label}</strong>
               <span className="muted" style={{ marginLeft: 'auto' }}>
-                {byStride[c.id].length}
+                {byCategory[c.id]?.length ?? 0}
               </span>
             </div>
             <p className="muted" style={{ fontSize: '0.8rem' }}>
               {c.description}
             </p>
             <div className="list">
-              {byStride[c.id].map((t) => (
+              {(byCategory[c.id] ?? []).map((t) => (
                 <button
                   key={t['bom-ref']}
                   type="button"
@@ -144,28 +176,39 @@ export function ThreatsView() {
             />
           </div>
           <div className="field">
-            <label>STRIDE category</label>
+            <label>Primary taxonomy category</label>
             <select
               value={
-                selected.categories?.find((c) => c.taxonomy === 'STRIDE')
-                  ?.category ?? 'spoofing'
+                selected.categories?.[0]
+                  ? `${selected.categories[0].taxonomy}:${selected.categories[0].category}`
+                  : 'STRIDE:spoofing'
               }
-              onChange={(e) =>
+              onChange={(e) => {
+                const [tax, cat] = e.target.value.split(':')
                 updateThreat(selected['bom-ref'], {
                   categories: [
                     {
-                      taxonomy: 'STRIDE',
-                      category: e.target.value,
+                      taxonomy: tax as ThreatTaxonomy,
+                      category: cat,
                     },
                   ],
                 })
-              }
+              }}
             >
-              {STRIDE_CATEGORIES.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
+              <optgroup label="STRIDE">
+                {STRIDE_CATEGORIES.map((c) => (
+                  <option key={c.id} value={`STRIDE:${c.id}`}>
+                    {c.label}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="LINDDUN">
+                {LINDDUN_CATEGORIES.map((c) => (
+                  <option key={c.id} value={`LINDDUN:${c.id}`}>
+                    {c.label}
+                  </option>
+                ))}
+              </optgroup>
             </select>
           </div>
           <div className="field">
@@ -184,6 +227,26 @@ export function ThreatsView() {
               {assets.map((a) => (
                 <option key={a['bom-ref']} value={a['bom-ref']}>
                   {a.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label>Linked attack trees</label>
+            <select
+              multiple
+              value={selected.attackTrees ?? []}
+              onChange={(e) => {
+                const values = Array.from(e.target.selectedOptions).map(
+                  (o) => o.value,
+                )
+                updateThreat(selected['bom-ref'], { attackTrees: values })
+              }}
+              style={{ minHeight: 80 }}
+            >
+              {trees.map((t) => (
+                <option key={t['bom-ref']} value={t['bom-ref']}>
+                  {t.name ?? t['bom-ref']}
                 </option>
               ))}
             </select>

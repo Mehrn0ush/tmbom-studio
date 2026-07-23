@@ -80,11 +80,17 @@ Keep the diagram at the level of security-relevant components—not every micros
 
 ### Step C — Catalog threats
 
-1. Use **Suggest STRIDE threats** on critical assets, then edit for accuracy.  
-2. Or add threats manually under **Threats** with the correct STRIDE category.  
-3. Link each threat to **affected assets** via `bom-ref`.  
+1. Use **Suggest STRIDE** / **Suggest LINDDUN** on critical assets, then edit for accuracy.  
+2. Or add threats manually under **Threats** (toggle STRIDE vs LINDDUN).  
+3. Optionally model attacker goals under **Attack trees** and link them to threats.  
+4. Link each threat to **affected assets** via `bom-ref`.  
 
 Prefer methodology-consistent naming so reports and dashboards stay comparable across teams.
+
+### Step C2 — Session & supply-chain links
+
+1. Under **Session**, record workshop date, participants, and notes; export a `.session.json` package to share.  
+2. Under **Links**, attach BOM-Link URNs / SBOM / VEX references as CycloneDX `externalReferences`.  
 
 ### Step D — Describe scenarios
 

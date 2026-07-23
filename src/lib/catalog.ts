@@ -1,4 +1,9 @@
-import type { RiskScoreLevel, StrideCategory, Threat } from '../types/cyclonedx'
+import type {
+  LinddunCategory,
+  RiskScoreLevel,
+  StrideCategory,
+  Threat,
+} from '../types/cyclonedx'
 import { bomRef } from './bom'
 
 export const STRIDE_CATEGORIES: Array<{
@@ -44,6 +49,89 @@ export const STRIDE_CATEGORIES: Array<{
     description: 'Gaining capabilities without proper authorization.',
   },
 ]
+
+export const LINDDUN_CATEGORIES: Array<{
+  id: LinddunCategory
+  label: string
+  letter: string
+  description: string
+}> = [
+  {
+    id: 'linkability',
+    label: 'Linkability',
+    letter: 'L',
+    description: 'Linking data items to learn more about an individual.',
+  },
+  {
+    id: 'identifiability',
+    label: 'Identifiability',
+    letter: 'I',
+    description: 'Identifying an individual from data.',
+  },
+  {
+    id: 'non-repudiation',
+    label: 'Non-repudiation',
+    letter: 'N',
+    description: 'Being unable to deny a claim, harming plausible deniability.',
+  },
+  {
+    id: 'detectability',
+    label: 'Detectability',
+    letter: 'D',
+    description: 'Detecting that an item of interest exists.',
+  },
+  {
+    id: 'disclosure-of-information',
+    label: 'Disclosure of information',
+    letter: 'D2',
+    description: 'Revealing personal data, violating confidentiality.',
+  },
+  {
+    id: 'unawareness',
+    label: 'Unawareness',
+    letter: 'U',
+    description: 'Individuals being unaware of the processing of their data.',
+  },
+  {
+    id: 'non-compliance',
+    label: 'Non-compliance',
+    letter: 'N2',
+    description: 'Deviating from policy, regulation, or best practice.',
+  },
+]
+
+/** Common CycloneDX external reference types for supply-chain linkage */
+export const LINK_REFERENCE_TYPES = [
+  { id: 'bom', label: 'BOM / SBOM', hint: 'Link to another CycloneDX BOM (often via BOM-Link URN)' },
+  {
+    id: 'vulnerability-assertion',
+    label: 'VEX / vulnerability assertion',
+    hint: 'Vulnerability Exploitability eXchange or similar assertion',
+  },
+  {
+    id: 'adversary-model',
+    label: 'Adversary model',
+    hint: 'External adversary or threat-actor model',
+  },
+  {
+    id: 'risk-assessment',
+    label: 'Risk assessment',
+    hint: 'Related risk assessment artifact',
+  },
+  {
+    id: 'threat-model',
+    label: 'Threat model',
+    hint: 'Another threat model document',
+  },
+  {
+    id: 'documentation',
+    label: 'Documentation',
+    hint: 'Design docs, ADRs, architecture notes',
+  },
+  { id: 'website', label: 'Website', hint: 'Product or security page' },
+  { id: 'other', label: 'Other', hint: 'Custom reference' },
+] as const
+
 
 export const ASSET_TYPES = [
   'actor',
@@ -203,6 +291,53 @@ export function suggestStrideThreats(
       'elevation-of-privilege',
       `Elevate privilege through ${assetName}`,
       `An attacker gains unauthorized capabilities by abusing ${assetName}.`,
+    ),
+  ]
+}
+
+/** Suggest common LINDDUN privacy threats for an asset */
+export function suggestLinddunThreats(
+  assetName: string,
+  assetRef: string,
+): Threat[] {
+  const base = (
+    category: LinddunCategory,
+    name: string,
+    description: string,
+  ): Threat => ({
+    'bom-ref': bomRef('threat'),
+    name,
+    description,
+    categories: [{ taxonomy: 'LINDDUN', category }],
+    affectedAssets: [assetRef],
+    source: 'ThreatModeler LINDDUN assistant',
+  })
+
+  return [
+    base(
+      'linkability',
+      `Link identities via ${assetName}`,
+      `Data flows through ${assetName} enable linking records to the same individual.`,
+    ),
+    base(
+      'identifiability',
+      `Identify individuals from ${assetName}`,
+      `${assetName} exposes attributes that uniquely identify a person.`,
+    ),
+    base(
+      'disclosure-of-information',
+      `Disclose personal data from ${assetName}`,
+      `Unauthorized parties obtain personal data processed by ${assetName}.`,
+    ),
+    base(
+      'unawareness',
+      `Process data in ${assetName} without notice`,
+      `Individuals are not informed about processing performed by ${assetName}.`,
+    ),
+    base(
+      'non-compliance',
+      `Non-compliant processing in ${assetName}`,
+      `${assetName} processing may violate policy or regulation.`,
     ),
   ]
 }

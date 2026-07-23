@@ -228,8 +228,11 @@ function BlueprintViewInner() {
               zones={zones}
               onChange={(patch) => updateAsset(selectedAsset['bom-ref'], patch)}
               onRemove={() => removeAsset(selectedAsset['bom-ref'])}
-              onSuggest={() =>
-                suggestThreatsForAsset(selectedAsset['bom-ref'])
+              onSuggestStride={() =>
+                suggestThreatsForAsset(selectedAsset['bom-ref'], 'STRIDE')
+              }
+              onSuggestLinddun={() =>
+                suggestThreatsForAsset(selectedAsset['bom-ref'], 'LINDDUN')
               }
             />
           ) : selectedFlow ? (
@@ -322,13 +325,15 @@ function AssetInspector({
   zones,
   onChange,
   onRemove,
-  onSuggest,
+  onSuggestStride,
+  onSuggestLinddun,
 }: {
   asset: Asset
   zones: { 'bom-ref': string; name: string }[]
   onChange: (patch: Partial<Asset>) => void
   onRemove: () => void
-  onSuggest: () => void
+  onSuggestStride: () => void
+  onSuggestLinddun: () => void
 }) {
   return (
     <div className="stack">
@@ -378,8 +383,11 @@ function AssetInspector({
       </div>
       <p className="mono muted">{asset['bom-ref']}</p>
       <div className="btn-row">
-        <button className="btn btn-primary" type="button" onClick={onSuggest}>
-          Suggest STRIDE threats
+        <button className="btn btn-primary" type="button" onClick={onSuggestStride}>
+          Suggest STRIDE
+        </button>
+        <button className="btn" type="button" onClick={onSuggestLinddun}>
+          Suggest LINDDUN
         </button>
         <button className="btn btn-danger" type="button" onClick={onRemove}>
           Delete

@@ -202,14 +202,47 @@ export interface Property {
 }
 
 export interface ExternalReference {
-  type?: string
-  url?: string
+  type: string
+  url: string
   comment?: string
 }
 
 export interface DiagramPosition {
   x: number
   y: number
+}
+
+export type AttackTreeOperator = 'and' | 'or'
+export type AttackTreeCost =
+  | 'negligible'
+  | 'low'
+  | 'moderate'
+  | 'high'
+  | 'prohibitive'
+export type AttackTreeSkill =
+  | 'none'
+  | 'basic'
+  | 'intermediate'
+  | 'advanced'
+  | 'expert'
+
+export interface AttackTreeNode {
+  'bom-ref': RefType
+  name: string
+  description?: string
+  operator?: AttackTreeOperator
+  children?: RefLinkType[]
+  cost?: AttackTreeCost
+  skill?: AttackTreeSkill
+  mitigations?: RefLinkType[]
+}
+
+export interface AttackTree {
+  'bom-ref': RefType
+  name?: string
+  description?: string
+  root?: RefLinkType
+  nodes: AttackTreeNode[]
 }
 
 export interface Asset {
@@ -290,6 +323,7 @@ export interface Threat {
   source?: string
   categories?: ThreatCategory[]
   affectedAssets?: RefLinkType[]
+  attackTrees?: RefLinkType[]
   mitigations?: RefLinkType[]
   properties?: Property[]
   externalReferences?: ExternalReference[]
@@ -338,6 +372,7 @@ export interface Risk {
 export interface ThreatsSection {
   threats?: Threat[]
   scenarios?: ThreatScenario[]
+  attackTrees?: AttackTree[]
   methodologies?: Methodology[]
   properties?: Property[]
 }
@@ -384,6 +419,9 @@ export type WorkspaceView =
   | 'blueprint'
   | 'threats'
   | 'scenarios'
+  | 'attack-trees'
   | 'risks'
+  | 'session'
+  | 'links'
   | 'report'
   | 'export'

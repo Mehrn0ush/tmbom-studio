@@ -2,10 +2,14 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
   Asset,
+  AttackTree,
+  AttackTreeNode,
   Blueprint,
   Boundary,
   CycloneDxBom,
+  ExternalReference,
   Flow,
+  Methodology,
   Risk,
   Threat,
   ThreatScenario,
@@ -13,6 +17,7 @@ import type {
   Zone,
 } from '../types/cyclonedx'
 import {
+  bomRef,
   createAsset,
   createBoundary,
   createFlow,
@@ -26,7 +31,8 @@ import {
   toExportBom,
 } from '../lib/bom'
 import { createSampleBom } from '../lib/sample'
-import { suggestStrideThreats } from '../lib/catalog'
+import { suggestLinddunThreats, suggestStrideThreats } from '../lib/catalog'
+import { applySession, type WorkshopSession } from '../lib/session'
 
 interface ThreatModelState {
   bom: CycloneDxBom
@@ -39,6 +45,11 @@ interface ThreatModelState {
   importBom: (raw: unknown) => void
   exportBom: () => CycloneDxBom
   updateMetadataName: (name: string) => void
+  updateSession: (session: WorkshopSession) => void
+  setMethodologies: (methodologies: Methodology[]) => void
+  setExternalReferences: (refs: ExternalReference[]) => void
+  addExternalReference: (ref: ExternalReference) => void
+  removeExternalReference: (index: number) => void
   updateBlueprint: (patch: Partial<Blueprint>) => void
   addAsset: (partial: Partial<Asset> & { name: string }) => string
   updateAsset: (ref: string, patch: Partial<Asset>) => void
@@ -60,12 +71,26 @@ interface ThreatModelState {
   addThreat: (partial: Partial<Threat> & { name: string }) => string
   updateThreat: (ref: string, patch: Partial<Threat>) => void
   removeThreat: (ref: string) => void
-  suggestThreatsForAsset: (assetRef: string) => number
+  suggestThreatsForAsset: (assetRef: string, taxonomy?: 'STRIDE' | 'LINDDUN') => number
   addScenario: (
     partial: Partial<ThreatScenario> & { name: string; threats: string[] },
   ) => string
   updateScenario: (ref: string, patch: Partial<ThreatScenario>) => void
   removeScenario: (ref: string) => void
+  addAttackTree: (partial?: Partial<AttackTree> & { name?: string }) => string
+  updateAttackTree: (ref: string, patch: Partial<AttackTree>) => void
+  removeAttackTree: (ref: string) => void
+  addAttackTreeNode: (
+    treeRef: string,
+    partial: Partial<AttackTreeNode> & { name: string },
+    parentNodeRef?: string,
+  ) => string
+  updateAttackTreeNode: (
+    treeRef: string,
+    nodeRef: string,
+    patch: Partial<AttackTreeNode>,
+  ) => void
+  removeAttackTreeNode: (treeRef: string, nodeRef: string) => void
   addRisk: (
     partial: Partial<Risk> & { name: string; statement: string },
   ) => string
@@ -129,6 +154,48 @@ export const useThreatModelStore = create<ThreatModelState>()(
           if (bom.metadata?.component) bom.metadata.component.name = name
           const bp = getPrimaryBlueprint(bom)
           bp.name = `${name} Architecture`
+          bumpVersion(bom)
+          return { bom }
+        }),
+
+      updateSession: (session) =>
+        set((s) => {
+          const bom = applySession(s.bom, session)
+          bumpVersion(bom)
+          return { bom }
+        }),
+
+      setMethodologies: (methodologies) =>
+        set((s) => {
+          const bom = structuredClone(s.bom)
+          bom.threats ??= { methodologies: [], threats: [], scenarios: [] }
+          bom.threats.methodologies = methodologies
+          bumpVersion(bom)
+          return { bom }
+        }),
+
+      setExternalReferences: (refs) =>
+        set((s) => {
+          const bom = structuredClone(s.bom)
+          bom.externalReferences = refs
+          bumpVersion(bom)
+          return { bom }
+        }),
+
+      addExternalReference: (ref) =>
+        set((s) => {
+          const bom = structuredClone(s.bom)
+          bom.externalReferences = [...(bom.externalReferences ?? []), ref]
+          bumpVersion(bom)
+          return { bom }
+        }),
+
+      removeExternalReference: (index) =>
+        set((s) => {
+          const bom = structuredClone(s.bom)
+          bom.externalReferences = (bom.externalReferences ?? []).filter(
+            (_, i) => i !== index,
+          )
           bumpVersion(bom)
           return { bom }
         }),
@@ -294,14 +361,24 @@ export const useThreatModelStore = create<ThreatModelState>()(
           }
         }),
 
-      suggestThreatsForAsset: (assetRef) => {
+      suggestThreatsForAsset: (assetRef, taxonomy = 'STRIDE') => {
         const bp = getPrimaryBlueprint(get().bom)
         const asset = bp.assets?.find((a) => a['bom-ref'] === assetRef)
         if (!asset?.name) return 0
-        const suggested = suggestStrideThreats(asset.name, assetRef)
+        const suggested =
+          taxonomy === 'LINDDUN'
+            ? suggestLinddunThreats(asset.name, assetRef)
+            : suggestStrideThreats(asset.name, assetRef)
         set((s) => {
           const bom = structuredClone(s.bom)
           bom.threats ??= { methodologies: ['STRIDE'], threats: [], scenarios: [] }
+          const methods = new Set(
+            (bom.threats.methodologies ?? []).map((m) =>
+              typeof m === 'string' ? m : m.name,
+            ),
+          )
+          methods.add(taxonomy)
+          bom.threats.methodologies = [...methods] as Methodology[]
           bom.threats.threats = [...(bom.threats.threats ?? []), ...suggested]
           bumpVersion(bom)
           return { bom, view: 'threats' }
@@ -343,6 +420,153 @@ export const useThreatModelStore = create<ThreatModelState>()(
           return {
             bom,
             selectedRef: get().selectedRef === ref ? null : get().selectedRef,
+          }
+        }),
+
+      addAttackTree: (partial) => {
+        const rootRef = bomRef('at-node')
+        const rootNode: AttackTreeNode = {
+          'bom-ref': rootRef,
+          name: partial?.name ?? 'Attacker goal',
+          operator: 'or',
+          children: [],
+        }
+        const tree: AttackTree = {
+          'bom-ref': bomRef('attack-tree'),
+          name: partial?.name ?? 'Attack tree',
+          description: partial?.description,
+          root: rootRef,
+          nodes: partial?.nodes?.length ? partial.nodes : [rootNode],
+        }
+        if (partial?.['bom-ref']) tree['bom-ref'] = partial['bom-ref']
+        if (!tree.root) tree.root = tree.nodes[0]?.['bom-ref']
+        set((s) => {
+          const bom = structuredClone(s.bom)
+          bom.threats ??= {
+            methodologies: ['STRIDE', 'attack-tree'],
+            threats: [],
+            scenarios: [],
+            attackTrees: [],
+          }
+          const methods = new Set(
+            (bom.threats.methodologies ?? []).map((m) =>
+              typeof m === 'string' ? m : m.name,
+            ),
+          )
+          methods.add('attack-tree')
+          bom.threats.methodologies = [...methods] as Methodology[]
+          bom.threats.attackTrees = [...(bom.threats.attackTrees ?? []), tree]
+          bumpVersion(bom)
+          return { bom, selectedRef: tree['bom-ref'], view: 'attack-trees' }
+        })
+        return tree['bom-ref']
+      },
+
+      updateAttackTree: (ref, patch) =>
+        set((s) => {
+          const bom = structuredClone(s.bom)
+          if (!bom.threats?.attackTrees) return s
+          bom.threats.attackTrees = bom.threats.attackTrees.map((t) =>
+            t['bom-ref'] === ref ? { ...t, ...patch } : t,
+          )
+          bumpVersion(bom)
+          return { bom }
+        }),
+
+      removeAttackTree: (ref) =>
+        set((s) => {
+          const bom = structuredClone(s.bom)
+          if (!bom.threats) return s
+          bom.threats.attackTrees = (bom.threats.attackTrees ?? []).filter(
+            (t) => t['bom-ref'] !== ref,
+          )
+          bom.threats.threats = (bom.threats.threats ?? []).map((th) => ({
+            ...th,
+            attackTrees: th.attackTrees?.filter((r) => r !== ref),
+          }))
+          bumpVersion(bom)
+          return {
+            bom,
+            selectedRef: get().selectedRef === ref ? null : get().selectedRef,
+          }
+        }),
+
+      addAttackTreeNode: (treeRef, partial, parentNodeRef) => {
+        const node: AttackTreeNode = {
+          'bom-ref': bomRef('at-node'),
+          operator: 'or',
+          children: [],
+          ...partial,
+        }
+        set((s) => {
+          const bom = structuredClone(s.bom)
+          const trees = bom.threats?.attackTrees ?? []
+          bom.threats ??= { threats: [], scenarios: [], attackTrees: [] }
+          bom.threats.attackTrees = trees.map((t) => {
+            if (t['bom-ref'] !== treeRef) return t
+            const parent = parentNodeRef ?? t.root
+            const nodes = [
+              ...t.nodes.map((n) =>
+                n['bom-ref'] === parent
+                  ? {
+                      ...n,
+                      children: [...(n.children ?? []), node['bom-ref']],
+                    }
+                  : n,
+              ),
+              node,
+            ]
+            return {
+              ...t,
+              nodes,
+              root: t.root ?? node['bom-ref'],
+            }
+          })
+          bumpVersion(bom)
+          return { bom, selectedRef: node['bom-ref'] }
+        })
+        return node['bom-ref']
+      },
+
+      updateAttackTreeNode: (treeRef, nodeRef, patch) =>
+        set((s) => {
+          const bom = structuredClone(s.bom)
+          if (!bom.threats?.attackTrees) return s
+          bom.threats.attackTrees = bom.threats.attackTrees.map((t) =>
+            t['bom-ref'] !== treeRef
+              ? t
+              : {
+                  ...t,
+                  nodes: t.nodes.map((n) =>
+                    n['bom-ref'] === nodeRef ? { ...n, ...patch } : n,
+                  ),
+                },
+          )
+          bumpVersion(bom)
+          return { bom }
+        }),
+
+      removeAttackTreeNode: (treeRef, nodeRef) =>
+        set((s) => {
+          const bom = structuredClone(s.bom)
+          if (!bom.threats?.attackTrees) return s
+          bom.threats.attackTrees = bom.threats.attackTrees.map((t) => {
+            if (t['bom-ref'] !== treeRef) return t
+            return {
+              ...t,
+              root: t.root === nodeRef ? t.nodes.find((n) => n['bom-ref'] !== nodeRef)?.['bom-ref'] : t.root,
+              nodes: t.nodes
+                .filter((n) => n['bom-ref'] !== nodeRef)
+                .map((n) => ({
+                  ...n,
+                  children: (n.children ?? []).filter((c) => c !== nodeRef),
+                })),
+            }
+          })
+          bumpVersion(bom)
+          return {
+            bom,
+            selectedRef: get().selectedRef === nodeRef ? null : get().selectedRef,
           }
         }),
 
