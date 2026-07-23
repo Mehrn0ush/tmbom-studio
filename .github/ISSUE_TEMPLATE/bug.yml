@@ -1,0 +1,48 @@
+name: Bug report
+description: Something in tmbom-studio is broken or unexpected
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please include enough detail to reproduce it.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Clear description of the bug
+      placeholder: Steps, expected vs actual behavior…
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open …
+        2. Click …
+        3. See error …
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where did you see this?
+      options:
+        - GitHub Pages (mehrn0ush.github.io/tmbom-studio)
+        - Local `npm run dev`
+        - Local `npm run preview` / production build
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser / OS
+      placeholder: e.g. Firefox 140 on macOS 15
+  - type: textarea
+    id: extras
+    attributes:
+      label: Extra context
+      description: Screenshots, console errors, or a minimal `.cdx.json` (redact sensitive architecture)

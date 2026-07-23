@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-label="tmbom-studio workspace preview">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7f4ec"/>
+      <stop offset="100%" stop-color="#ebe6d6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <rect x="0" y="0" width="240" height="720" fill="#fffdf8" stroke="#d4cdb8"/>
+  <rect x="28" y="28" width="40" height="40" rx="8" fill="#0b6e4f"/>
+  <text x="38" y="54" fill="#f7fff9" font-family="IBM Plex Mono, monospace" font-size="16" font-weight="600">TM</text>
+  <text x="28" y="98" fill="#1a2332" font-family="Fraunces, Georgia, serif" font-size="28">tmbom-studio</text>
+  <text x="28" y="124" fill="#4a5568" font-family="Figtree, sans-serif" font-size="13">CycloneDX 2.0 TM-BOM</text>
+  <rect x="20" y="160" width="200" height="36" rx="8" fill="#d8f3e7"/>
+  <text x="36" y="183" fill="#064c37" font-family="Figtree, sans-serif" font-size="14" font-weight="600">Overview</text>
+  <text x="36" y="230" fill="#4a5568" font-family="Figtree, sans-serif" font-size="14">Blueprint</text>
+  <text x="36" y="268" fill="#4a5568" font-family="Figtree, sans-serif" font-size="14">Threats</text>
+  <text x="36" y="306" fill="#4a5568" font-family="Figtree, sans-serif" font-size="14">Scenarios</text>
+  <text x="36" y="344" fill="#4a5568" font-family="Figtree, sans-serif" font-size="14">Risks</text>
+  <text x="36" y="382" fill="#4a5568" font-family="Figtree, sans-serif" font-size="14">Report</text>
+  <text x="36" y="420" fill="#4a5568" font-family="Figtree, sans-serif" font-size="14">Projects</text>
+
+  <rect x="240" y="0" width="1040" height="72" fill="#fffdf8" stroke="#d4cdb8"/>
+  <text x="268" y="34" fill="#1a2332" font-family="Fraunces, Georgia, serif" font-size="24">Architecture blueprint</text>
+  <text x="268" y="56" fill="#7a8494" font-family="IBM Plex Mono, monospace" font-size="12">Checkout API · v1 · 5 assets · 5 threats</text>
+  <rect x="1080" y="20" width="160" height="36" rx="8" fill="#0b6e4f"/>
+  <text x="1110" y="43" fill="#f4fff8" font-family="Figtree, sans-serif" font-size="14" font-weight="600">Save project</text>
+
+  <rect x="268" y="104" width="720" height="560" rx="10" fill="#ebe6d9" stroke="#d4cdb8"/>
+  <path d="M300 140 H960 M300 176 H960 M300 212 H960 M300 248 H960 M300 284 H960 M300 320 H960 M300 356 H960 M300 392 H960 M300 428 H960 M300 464 H960 M300 500 H960 M300 536 H960 M300 572 H960 M300 608 H960" stroke="#c9c2b0" stroke-width="1"/>
+  <path d="M336 120 V640 M372 120 V640 M408 120 V640 M444 120 V640 M480 120 V640 M516 120 V640 M552 120 V640 M588 120 V640 M624 120 V640 M660 120 V640 M696 120 V640 M732 120 V640 M768 120 V640 M804 120 V640 M840 120 V640 M876 120 V640 M912 120 V640 M948 120 V640" stroke="#c9c2b0" stroke-width="1"/>
+
+  <rect x="310" y="280" width="150" height="70" rx="10" fill="#fffdf8" stroke="#1a2332" stroke-width="1.5"/>
+  <text x="326" y="308" fill="#7a8494" font-family="IBM Plex Mono, monospace" font-size="11">ACTOR</text>
+  <text x="326" y="330" fill="#1a2332" font-family="Figtree, sans-serif" font-size="15" font-weight="650">Customer Browser</text>
+
+  <rect x="520" y="280" width="150" height="70" rx="10" fill="#fffdf8" stroke="#0b6e4f" stroke-width="2"/>
+  <text x="536" y="308" fill="#7a8494" font-family="IBM Plex Mono, monospace" font-size="11">GATEWAY</text>
+  <text x="536" y="330" fill="#1a2332" font-family="Figtree, sans-serif" font-size="15" font-weight="650">API Gateway</text>
+
+  <rect x="730" y="220" width="160" height="70" rx="10" fill="#fffdf8" stroke="#1a2332" stroke-width="1.5"/>
+  <text x="746" y="248" fill="#7a8494" font-family="IBM Plex Mono, monospace" font-size="11">SERVICE</text>
+  <text x="746" y="270" fill="#1a2332" font-family="Figtree, sans-serif" font-size="15" font-weight="650">Checkout Service</text>
+
+  <rect x="730" y="400" width="160" height="70" rx="10" fill="#fffdf8" stroke="#1a2332" stroke-width="1.5"/>
+  <text x="746" y="428" fill="#7a8494" font-family="IBM Plex Mono, monospace" font-size="11">SERVICE</text>
+  <text x="746" y="450" fill="#1a2332" font-family="Figtree, sans-serif" font-size="15" font-weight="650">Payment Provider</text>
+
+  <line x1="460" y1="315" x2="520" y2="315" stroke="#1a2332" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="670" y1="315" x2="730" y2="255" stroke="#1a2332" stroke-width="2"/>
+  <line x1="810" y1="290" x2="810" y2="400" stroke="#1a2332" stroke-width="2"/>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#1a2332"/>
+    </marker>
+  </defs>
+
+  <rect x="1010" y="104" width="240" height="560" rx="10" fill="#fffdf8" stroke="#d4cdb8"/>
+  <text x="1030" y="140" fill="#1a2332" font-family="Fraunces, Georgia, serif" font-size="22">Asset</text>
+  <text x="1030" y="176" fill="#4a5568" font-family="Figtree, sans-serif" font-size="12">Name</text>
+  <rect x="1030" y="184" width="200" height="34" rx="8" fill="#fff" stroke="#d4cdb8"/>
+  <text x="1042" y="206" fill="#1a2332" font-family="Figtree, sans-serif" font-size="13">API Gateway</text>
+  <text x="1030" y="246" fill="#4a5568" font-family="Figtree, sans-serif" font-size="12">Type</text>
+  <rect x="1030" y="254" width="200" height="34" rx="8" fill="#fff" stroke="#d4cdb8"/>
+  <text x="1042" y="276" fill="#1a2332" font-family="Figtree, sans-serif" font-size="13">gateway</text>
+  <rect x="1030" y="320" width="200" height="40" rx="8" fill="#0b6e4f"/>
+  <text x="1052" y="345" fill="#f4fff8" font-family="Figtree, sans-serif" font-size="13" font-weight="600">Suggest STRIDE threats</text>
+  <text x="1030" y="400" fill="#7a8494" font-family="IBM Plex Mono, monospace" font-size="11">asset-api-gateway</text>
+</svg>

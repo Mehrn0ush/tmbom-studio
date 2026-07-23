@@ -4,10 +4,17 @@
 
 Interactive workspace to build architecture blueprints, STRIDE threats, scenarios, and risks, then save a standards-aligned **Threat Model Bill of Materials** (`.cdx.json`).
 
+**Live app:** [https://mehrn0ush.github.io/tmbom-studio/](https://mehrn0ush.github.io/tmbom-studio/)  
+**Sample:** [https://mehrn0ush.github.io/tmbom-studio/?example=checkout-api](https://mehrn0ush.github.io/tmbom-studio/?example=checkout-api)
+
+[![CI](https://github.com/Mehrn0ush/tmbom-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Mehrn0ush/tmbom-studio/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/License-Apache_2.0-green.svg)](./LICENSE)
+
+![tmbom-studio workspace](./docs/screenshot.svg)
+
 - **Repo:** https://github.com/Mehrn0ush/tmbom-studio  
-- **Try it (GitHub Pages):** https://mehrn0ush.github.io/tmbom-studio/  
-- **Sample deep-link:** https://mehrn0ush.github.io/tmbom-studio/?example=checkout-api  
 - **Org guide:** [GUIDELINES.md](./GUIDELINES.md)  
+- **Contributing:** [CONTRIBUTING.md](./CONTRIBUTING.md)  
 - **License:** [Apache-2.0](./LICENSE)
 
 Schemas follow the CycloneDX [`2.0-dev-threatmodeling`](https://github.com/CycloneDX/specification/tree/2.0-dev-threatmodeling/schema/2.0) branch.
@@ -39,7 +46,9 @@ Schemas follow the CycloneDX [`2.0-dev-threatmodeling`](https://github.com/Cyclo
 | `blueprints` | Visual data-flow: assets, zones, trust boundaries, flows |
 | `threats` | STRIDE catalog, methodologies, scenarios |
 | `risks` | Statements, inherent/residual ratings, responses |
-| Persistence | Save/Open project files (+ draft cache in `localStorage`) |
+| `report` | Printable / Save-as-PDF risk summary for reviews |
+| Persistence | Save/Open project files + recent drafts (+ `localStorage` cache) |
+| Validation | Structural checks in the UI before save; sample checked in CI |
 | Example | `examples/checkout-api.cdx.json` (also loadable in the UI) |
 
 ---
@@ -76,21 +85,13 @@ Open the URL Vite prints (usually http://localhost:5173).
 ## CI & GitHub Pages
 
 - **CI** (`.github/workflows/ci.yml`) runs `npm run build` and `npm run validate:example` on pushes and pull requests.
-- **Pages site files** are on the `gh-pages` branch (built with `npm run build:pages`).
-- **Actions workflow** (`.github/workflows/pages.yml`) can also deploy via GitHub Actions once Pages is enabled.
+- **Pages** (`.github/workflows/pages.yml`) builds with `npm run build:pages` and **auto-deploys to the `gh-pages` branch** on every push to `main`.
 
-### Enable the site (one-time)
+One-time Pages setting (if the site is not live yet):
 
-1. Open **[Settings → Pages](https://github.com/Mehrn0ush/tmbom-studio/settings/pages)**
-2. Under **Build and deployment → Source**, choose **Deploy from a branch**
-3. Branch: **`gh-pages`** / folder: **`/ (root)`** → **Save**
-
-After a minute, open:
-
-- https://mehrn0ush.github.io/tmbom-studio/
-- https://mehrn0ush.github.io/tmbom-studio/?example=checkout-api
-
-(Alternatively set Source to **GitHub Actions** if you prefer the workflow-only path.)
+1. **[Settings → Pages](https://github.com/Mehrn0ush/tmbom-studio/settings/pages)**
+2. Source: **Deploy from a branch**
+3. Branch: **`gh-pages`** / **`/ (root)`** → Save
 
 ---
 

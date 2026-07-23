@@ -1,0 +1,225 @@
+import { getPrimaryBlueprint } from '../../lib/bom'
+import { riskLevelColor } from '../../lib/catalog'
+import { useThreatModelStore } from '../../store/useThreatModelStore'
+
+export function ReportView() {
+  const bom = useThreatModelStore((s) => s.bom)
+  const bp = getPrimaryBlueprint(bom)
+  const threats = bom.threats?.threats ?? []
+  const scenarios = bom.threats?.scenarios ?? []
+  const risks = bom.risks?.risks ?? []
+  const name = bom.metadata?.component?.name ?? 'Untitled System'
+  const methodologies = (bom.threats?.methodologies ?? [])
+    .map((m) => (typeof m === 'string' ? m : m.name))
+    .join(', ')
+
+  return (
+    <div className="stack">
+      <div className="panel panel-pad no-print btn-row">
+        <p className="muted" style={{ margin: 0, flex: 1 }}>
+          Printable risk summary for design reviews. Use your browser print
+          dialog — choose “Save as PDF” if you need a PDF artifact.
+        </p>
+        <button className="btn btn-primary" type="button" onClick={() => window.print()}>
+          Print / Save as PDF
+        </button>
+      </div>
+
+      <article className="panel panel-pad report-doc">
+        <header className="report-header">
+          <p className="mono muted" style={{ margin: 0 }}>
+            CycloneDX {bom.specVersion} TM-BOM · tmbom-studio
+          </p>
+          <h1>{name}</h1>
+          <p className="muted">
+            Generated {new Date().toISOString()} · BOM v{bom.version} ·{' '}
+            {methodologies || 'no methodology set'}
+          </p>
+        </header>
+
+        <section>
+          <h2>Architecture snapshot</h2>
+          <table className="table">
+            <tbody>
+              <tr>
+                <th>Blueprint</th>
+                <td>{bp.name}</td>
+              </tr>
+              <tr>
+                <th>Model types</th>
+                <td className="mono">{(bp.modelTypes ?? []).join(', ')}</td>
+              </tr>
+              <tr>
+                <th>Counts</th>
+                <td>
+                  {bp.assets?.length ?? 0} assets · {bp.zones?.length ?? 0} zones ·{' '}
+                  {bp.flows?.length ?? 0} flows · {bp.boundaries?.length ?? 0}{' '}
+                  boundaries
+                </td>
+              </tr>
+              <tr>
+                <th>Catalog</th>
+                <td>
+                  {threats.length} threats · {scenarios.length} scenarios ·{' '}
+                  {risks.length} risks
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2>Assets</h2>
+          {(bp.assets ?? []).length === 0 ? (
+            <p className="muted">No assets documented.</p>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Zone</th>
+                  <th>bom-ref</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(bp.assets ?? []).map((a) => (
+                  <tr key={a['bom-ref']}>
+                    <td>{a.name}</td>
+                    <td className="mono">
+                      {typeof a.type === 'string' ? a.type : a.type?.name}
+                    </td>
+                    <td className="mono">{a.zone ?? '—'}</td>
+                    <td className="mono">{a['bom-ref']}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+
+        <section>
+          <h2>Threats</h2>
+          {threats.length === 0 ? (
+            <p className="muted">No threats documented.</p>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>STRIDE / taxonomy</th>
+                  <th>Affected assets</th>
+                </tr>
+              </thead>
+              <tbody>
+                {threats.map((t) => (
+                  <tr key={t['bom-ref']}>
+                    <td>
+                      <strong>{t.name}</strong>
+                      {t.description ? (
+                        <div className="muted" style={{ fontSize: '0.85rem' }}>
+                          {t.description}
+                        </div>
+                      ) : null}
+                    </td>
+                    <td className="mono">
+                      {(t.categories ?? [])
+                        .map((c) => `${c.taxonomy}:${c.category}`)
+                        .join(', ') || '—'}
+                    </td>
+                    <td className="mono">
+                      {(t.affectedAssets ?? []).join(', ') || '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+
+        <section>
+          <h2>Risk register</h2>
+          {risks.length === 0 ? (
+            <p className="muted">No risks documented.</p>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Risk</th>
+                  <th>Inherent</th>
+                  <th>Residual</th>
+                  <th>Responses</th>
+                </tr>
+              </thead>
+              <tbody>
+                {risks.map((r) => {
+                  const inherent =
+                    r.inherentRisk?.score?.level ??
+                    r.inherentRisk?.likelihood?.level ??
+                    '—'
+                  const residual =
+                    r.residualRisk?.score?.level ??
+                    r.residualRisk?.likelihood?.level ??
+                    '—'
+                  return (
+                    <tr key={r['bom-ref']}>
+                      <td>
+                        <strong>{r.name}</strong>
+                        <div style={{ marginTop: 4 }}>{r.statement}</div>
+                      </td>
+                      <td>
+                        <span
+                          className="badge badge-risk"
+                          style={{
+                            background:
+                              inherent === '—'
+                                ? 'var(--ink-faint)'
+                                : riskLevelColor(String(inherent)),
+                          }}
+                        >
+                          {inherent}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className="badge badge-risk"
+                          style={{
+                            background:
+                              residual === '—'
+                                ? 'var(--ink-faint)'
+                                : riskLevelColor(String(residual)),
+                          }}
+                        >
+                          {residual}
+                        </span>
+                      </td>
+                      <td>
+                        {(r.responses ?? []).length === 0
+                          ? '—'
+                          : (r.responses ?? [])
+                              .map(
+                                (resp) =>
+                                  `${resp.strategy}${
+                                    resp.description
+                                      ? `: ${resp.description}`
+                                      : ''
+                                  }`,
+                              )
+                              .join(' · ')}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+        </section>
+
+        <footer className="muted" style={{ marginTop: '1.5rem', fontSize: '0.8rem' }}>
+          Serial {bom.serialNumber ?? '—'} · This summary is derived from a
+          CycloneDX TM-BOM and is not a substitute for formal risk acceptance.
+        </footer>
+      </article>
+    </div>
+  )
+}

@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: CycloneDX specification
+    url: https://github.com/CycloneDX/specification/tree/2.0-dev-threatmodeling/schema/2.0
+    about: Questions about the evolving CycloneDX 2.0 threat-modeling schemas

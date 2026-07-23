@@ -1,0 +1,42 @@
+name: Feature request
+description: Propose an enhancement for tmbom-studio
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem you want to solve and how it helps threat-modeling / TM-BOM workflows.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is hard or missing today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How should tmbom-studio behave?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Blueprint / DFD
+        - Threats / STRIDE
+        - Scenarios
+        - Risks / report
+        - Import / export / validation
+        - Docs / GitHub Pages
+        - Other / CycloneDX schema coverage
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional — other approaches or tools

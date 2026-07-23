@@ -5,6 +5,7 @@ import { BlueprintView } from './components/blueprint/BlueprintView'
 import { ThreatsView } from './components/threats/ThreatsView'
 import { ScenariosView } from './components/risks/ScenariosView'
 import { RisksView } from './components/risks/RisksView'
+import { ReportView } from './components/report/ReportView'
 import {
   ExportView,
   useExampleQueryBootstrap,
@@ -17,6 +18,7 @@ const NAV: Array<{ id: WorkspaceView; label: string }> = [
   { id: 'threats', label: 'Threats' },
   { id: 'scenarios', label: 'Scenarios' },
   { id: 'risks', label: 'Risks' },
+  { id: 'report', label: 'Report' },
   { id: 'export', label: 'Projects' },
 ]
 
@@ -26,6 +28,7 @@ const TITLES: Record<WorkspaceView, string> = {
   threats: 'Threat catalog',
   scenarios: 'Threat scenarios',
   risks: 'Risk register',
+  report: 'Risk report',
   export: 'Projects / Export',
 }
 
@@ -95,13 +98,22 @@ export default function App() {
               {bom.threats?.threats?.length ?? 0} threats
             </div>
           </div>
-          <button
-            className="btn btn-primary"
-            type="button"
-            onClick={() => setView('export')}
-          >
-            Save project
-          </button>
+          <div className="btn-row">
+            <button
+              className="btn"
+              type="button"
+              onClick={() => setView('report')}
+            >
+              Report
+            </button>
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={() => setView('export')}
+            >
+              Save project
+            </button>
+          </div>
         </header>
 
         <main className="content">
@@ -110,6 +122,7 @@ export default function App() {
           {view === 'threats' && <ThreatsView />}
           {view === 'scenarios' && <ScenariosView />}
           {view === 'risks' && <RisksView />}
+          {view === 'report' && <ReportView />}
           {view === 'export' && <ExportView />}
         </main>
       </div>

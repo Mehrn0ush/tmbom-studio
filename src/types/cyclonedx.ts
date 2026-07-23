@@ -385,4 +385,5 @@ export type WorkspaceView =
   | 'threats'
   | 'scenarios'
   | 'risks'
+  | 'report'
   | 'export'
