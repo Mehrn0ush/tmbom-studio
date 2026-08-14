@@ -4058,8 +4058,9 @@
           "title": "Ordinal Version",
           "description": "An ordinal version is a dot-delimited, purely numeric identifier where each segment represents an ordered level in the hierarchy. The segments have no prescribed meaning beyond numeric ordering, allowing straightforward comparison and sorting.",
           "type": "string",
-          "pattern": "^\\d+(\\.\\d+)*$",
+          "pattern": "^[0-9]+(\\.[0-9]+)*$",
           "examples": [
+            "0.8.15",
             "1",
             "1.2",
             "1.2.3",
@@ -5386,7 +5387,7 @@
           "items": {
             "$ref": "#/$defs/cyclonedx-control-2.0/$defs/control"
           },
-          "description": "The safeguards and countermeasures that are recommended or in place. Controls may be declared on their own for governance, risk, and compliance use cases, or referenced from threats, trust boundaries, and risk responses."
+          "description": "The safeguards and countermeasures that are recommended or in place.\n Controls may be declared on their own for governance, risk, and compliance use cases, or referenced from threats, trust boundaries, and risk responses."
         },
         "control": {
           "type": "object",
@@ -11594,7 +11595,7 @@
         "profiles": {
           "type": "object",
           "title": "Profiles",
-          "description": "A registry of reusable, named characterizations of how a subject behaves or is governed within a domain. Profiles separate characterization from identity: identity describes who or what the subject is; the profile describes the durable attributes that characterize it. A profile is referenced by its bom-ref from the elements it characterizes, so a single profile can be reused by many subjects.",
+          "description": "A registry of reusable, named characterizations of how a subject behaves or is governed within a domain.\n Profiles separate characterization from identity: identity describes who or what the subject is; the profile describes the durable attributes that characterize it.\n A profile is referenced by its bom-ref from the elements it characterizes, so a single profile can be reused by many subjects.",
           "additionalProperties": false,
           "properties": {
             "dataProfiles": {
@@ -12074,7 +12075,7 @@
         "risks": {
           "type": "object",
           "title": "Risks",
-          "description": "A collection of risks identified through risk analysis, together with the assessments that evaluate them. The model is framework-neutral and can document risk regardless of the risk management framework in use, including [ISO 31000](https://www.iso.org/iso-31000-risk-management.html), [NIST SP 800-30](https://csrc.nist.gov/pubs/sp/800/30/r1/final), the [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework), [COSO ERM](https://www.coso.org/), [ISO/IEC 27005](https://www.iso.org/standard/80585.html), and OCTAVE. It accommodates qualitative, semi-quantitative, and quantitative assessment, and each rating records the scoring methodology used, such as [FAIR](https://www.fairinstitute.org/), [OWASP Risk Rating](https://owasp.org/www-community/OWASP_Risk_Rating_Methodology), DREAD, [FMEA](https://asq.org/quality-resources/fmea), NIST SP 800-30, or OCTAVE Allegro. Each risk separates inherent, residual, and target ratings so risk reduction is explicit.",
+          "description": "A collection of risks identified through risk analysis, together with the assessments that evaluate them.\n The model is framework-neutral and can document risk regardless of the risk management framework in use, including [ISO 31000](https://www.iso.org/iso-31000-risk-management.html), [NIST SP 800-30](https://csrc.nist.gov/pubs/sp/800/30/r1/final), the [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework), [COSO ERM](https://www.coso.org/), [ISO/IEC 27005](https://www.iso.org/standard/80585.html), and OCTAVE. It accommodates qualitative, semi-quantitative, and quantitative assessment, and each rating records the scoring methodology used, such as [FAIR](https://www.fairinstitute.org/), [OWASP Risk Rating](https://owasp.org/www-community/OWASP_Risk_Rating_Methodology), DREAD, [FMEA](https://asq.org/quality-resources/fmea), NIST SP 800-30, or OCTAVE Allegro.\n Each risk separates inherent, residual, and target ratings so risk reduction is explicit.",
           "additionalProperties": false,
           "properties": {
             "risks": {
@@ -16339,7 +16340,7 @@
         },
         "weakness": {
           "title": "Weakness",
-          "description": "A classification of an underlying weakness, given either by a Common Weakness Enumeration (CWE) identifier or by a free-text name with an optional description. The exploitability and the affected scope are expressed by the vulnerability or threat that references the weakness, not on the weakness itself.",
+          "description": "A classification of an underlying weakness, given either by a Common Weakness Enumeration (CWE) identifier or by a free-text name with an optional description.\n The exploitability and the affected scope are expressed by the vulnerability or threat that references the weakness, not on the weakness itself.",
           "oneOf": [
             {
               "type": "object",

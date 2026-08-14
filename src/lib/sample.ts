@@ -1,4 +1,5 @@
 import type { CycloneDxBom } from '../types/cyclonedx'
+import { writeThreatInScope } from '../types/cyclonedx'
 import {
   createAsset,
   createBoundary,
@@ -73,6 +74,21 @@ const STABLE = {
   respSign: 'response-signed-payloads',
   respAcceptDos: 'response-accept-residual-dos',
   respMinimize: 'response-data-minimization',
+  ctrlMtls: 'control-mtls',
+  ctrlWaf: 'control-waf',
+  ctrlIam: 'control-iam-least-priv',
+  ctrlToken: 'control-tokenization',
+  tbEdge: 'trust-boundary-edge',
+  tbApp: 'trust-boundary-app',
+  pathSpoof: 'attack-path-spoof',
+  abuseRefund: 'abuse-case-fraudulent-refund',
+  reqPci: 'requirement-pci-dss',
+  objRevenue: 'objective-revenue-protection',
+  ucCheckout: 'use-case-place-order',
+  profileOpportunist: 'profile-opportunistic-attacker',
+  tLogging: 'threat-logging-tamper',
+  scopeCheckout: 'scope-checkout-api',
+  compCheckoutLib: 'component-checkout-lib',
 } as const
 
 /** Sample TM-BOM: online checkout API with STRIDE threats and risks (stable bom-refs). */
@@ -194,6 +210,7 @@ export function createSampleBom(): CycloneDxBom {
     name: 'API key theft enables service spoofing',
     description:
       'Stolen gateway credentials allow an attacker to impersonate trusted callers (STRIDE Spoofing; CAPEC-115 / ATT&CK Valid Accounts).',
+    origin: 'adversarial',
     categories: [
       { taxonomy: 'STRIDE', category: 'spoofing' },
       { taxonomy: 'MITRE-ATTACK', category: 'credential-access' },
@@ -258,50 +275,152 @@ export function createSampleBom(): CycloneDxBom {
     categories: [{ taxonomy: 'LINDDUN', category: 'linkability' }],
     affectedAssets: [STABLE.ordersDb, STABLE.checkout],
   })
+  const tLogging = createThreat({
+    'bom-ref': STABLE.tLogging,
+    name: 'Centralized logging pipeline tampering',
+    description:
+      'Attacker alters or deletes audit logs in the organization-wide SIEM. The logging platform is owned by the platform team and is outside the Checkout API responsibility boundary.',
+    origin: 'adversarial',
+    categories: [{ taxonomy: 'STRIDE', category: 'repudiation' }],
+    properties: writeThreatInScope(undefined, false),
+  })
 
+  const controls = [
+    {
+      'bom-ref': STABLE.ctrlMtls,
+      name: 'Mutual TLS between services',
+      description: 'Require mTLS and short-lived tokens for service-to-service calls.',
+      category: 'preventive' as const,
+      status: 'implemented' as const,
+      appliesTo: [STABLE.gateway, STABLE.checkout],
+    },
+    {
+      'bom-ref': STABLE.ctrlWaf,
+      name: 'WAF and rate limiting',
+      description: 'Edge WAF rules and per-IP rate limits at the API gateway.',
+      category: 'preventive' as const,
+      status: 'implemented' as const,
+      appliesTo: [STABLE.gateway],
+    },
+    {
+      'bom-ref': STABLE.ctrlIam,
+      name: 'Least-privilege IAM',
+      description: 'Scoped database roles and deny-by-default service policies.',
+      category: 'preventive' as const,
+      status: 'in-progress' as const,
+      appliesTo: [STABLE.checkout, STABLE.ordersDb],
+    },
+    {
+      'bom-ref': STABLE.ctrlToken,
+      name: 'Payment tokenization',
+      description: 'PAN never stored; only provider tokens persisted in Orders DB.',
+      category: 'preventive' as const,
+      status: 'verified' as const,
+      appliesTo: [STABLE.checkout, STABLE.ordersDb],
+    },
+  ]
+
+  const trustBoundaries = [
+    {
+      'bom-ref': STABLE.tbEdge,
+      boundary: STABLE.edgeBoundary,
+      name: 'Internet → DMZ trust drop',
+      trustLevel: 'untrusted' as const,
+      threatsAtBoundary: [STABLE.tDos, STABLE.tSpoof],
+      controlsAtBoundary: [STABLE.ctrlWaf],
+    },
+    {
+      'bom-ref': STABLE.tbApp,
+      boundary: STABLE.appBoundary,
+      name: 'DMZ → Private trust drop',
+      trustLevel: 'semi-trusted' as const,
+      threatsAtBoundary: [STABLE.tEop, STABLE.tDisclose],
+      controlsAtBoundary: [STABLE.ctrlIam],
+    },
+  ]
+
+  const attackPaths = [
+    {
+      'bom-ref': STABLE.pathSpoof,
+      name: 'Credential theft to API impersonation',
+      description: 'Phished gateway credentials used to call checkout APIs as a trusted peer.',
+      steps: [
+        {
+          'bom-ref': 'path-step-phish',
+          number: 1,
+          description: 'Phish developer or leak API key from repository',
+          technique: STABLE.apTrustedId,
+        },
+        {
+          'bom-ref': 'path-step-call',
+          number: 2,
+          description: 'Invoke checkout endpoints with stolen credentials',
+          boundaryCrossed: STABLE.edgeBoundary,
+          mitigations: [STABLE.ctrlMtls],
+        },
+      ],
+    },
+  ]
+
+  const abuseCases = [
+    {
+      'bom-ref': STABLE.abuseRefund,
+      name: 'Fraudulent refund via spoofed callbacks',
+      description:
+        'Abuser triggers refund webhooks without a valid order by impersonating the payment provider.',
+      abuser: STABLE.customer,
+      targets: [STABLE.checkout],
+      realizes: [STABLE.tSpoof],
+      mainFlow: [
+        { number: 1, description: 'Obtain or guess webhook signing secret' },
+        { number: 2, description: 'POST forged refund callback to checkout service' },
+      ],
+    },
+  ]
+
+  // Official CAPEC List 3.9 names/descriptions/ATT&CK mappings (subset used by sample)
   const attackPatterns = [
     {
       'bom-ref': STABLE.apAuthBypass,
       name: 'Authentication Bypass',
       capecId: 115,
-      description: 'An adversary bypasses authentication to access a target.',
+      description:
+        'An attacker gains access to application, service, or device with the privileges of an authorized or privileged user by evading or circumventing an authentication mechanism. The attacker is therefore able to access protected data without authentication ever having taken place.',
       techniques: [
-        { id: 'T1078', name: 'Valid Accounts', tactic: 'initial-access' },
+        { id: 'T1548', name: 'Abuse Elevation Control Mechanism' },
       ],
     },
     {
       'bom-ref': STABLE.apFlood,
       name: 'Flooding',
       capecId: 125,
-      description: 'An adversary overwhelms a target with excessive traffic or requests.',
+      description:
+        'An adversary consumes the resources of a target by rapidly engaging in a large number of interactions with the target. This type of attack generally exposes a weakness in rate limiting or flow. When successful this attack prevents legitimate users from accessing the service and can cause the target to crash.',
       techniques: [
-        { id: 'T1498', name: 'Network Denial of Service', tactic: 'impact' },
+        {
+          id: 'T1498.001',
+          name: 'Network Denial of Service: Direct Network Flood',
+        },
+        { id: 'T1499', name: 'Endpoint Denial of Service' },
       ],
     },
     {
       'bom-ref': STABLE.apSqli,
       name: 'SQL Injection',
       capecId: 66,
-      description: 'An adversary exploits insufficient input validation to inject SQL.',
-      techniques: [
-        {
-          id: 'T1190',
-          name: 'Exploit Public-Facing Application',
-          tactic: 'initial-access',
-        },
-      ],
+      description:
+        'This attack exploits target software that constructs SQL statements based on user input. An attacker crafts input strings so that when the target software constructs SQL statements based on the input, the resulting SQL statement performs actions other than those the application intended.',
     },
     {
       'bom-ref': STABLE.apTrustedId,
       name: 'Exploitation of Trusted Identifiers',
       capecId: 21,
-      description: 'An adversary abuses trusted identifiers or credentials.',
+      description:
+        'An adversary guesses, obtains, or rides a trusted identifier (e.g. session ID, resource ID, cookie, etc.) to perform authorized actions under the guise of an authenticated user or service.',
       techniques: [
-        {
-          id: 'T1550',
-          name: 'Use Alternate Authentication Material',
-          tactic: 'defense-evasion',
-        },
+        { id: 'T1134', name: 'Access Token Manipulation' },
+        { id: 'T1528', name: 'Steal Application Access Token' },
+        { id: 'T1539', name: 'Steal Web Session Cookie' },
       ],
     },
   ]
@@ -603,6 +722,13 @@ export function createSampleBom(): CycloneDxBom {
         boundaries: [edgeBoundary, appBoundary],
         assets: [customer, apiGateway, checkout, ordersDb, payment],
         flows,
+        scope: {
+          'bom-ref': STABLE.scopeCheckout,
+          name: 'Checkout API application boundary',
+          description:
+            'In-scope: Checkout Service, API Gateway configuration, Orders DB schema. Out-of-scope: corporate SIEM/logging platform, payment provider internals.',
+          boundaries: [STABLE.edgeBoundary, STABLE.appBoundary],
+        },
         assumptions: [
           {
             'bom-ref': STABLE.assumptionTls,
@@ -617,12 +743,65 @@ export function createSampleBom(): CycloneDxBom {
         ],
       },
     ],
+    components: [
+      {
+        'bom-ref': STABLE.compCheckoutLib,
+        type: 'application',
+        name: 'checkout-api',
+        version: '1.2.0',
+        description: 'Checkout API deployable (related SBOM subject)',
+        scope: 'required',
+      },
+    ],
+    controls,
+    definitions: {
+      requirements: [
+        {
+          'bom-ref': STABLE.reqPci,
+          id: 'REQ-PCI-01',
+          name: 'PCI-DSS scope minimization',
+          description: 'Cardholder data must not persist in Orders DB; tokenization only.',
+          priority: 'high',
+          status: 'approved',
+        },
+      ],
+      businessObjectives: [
+        {
+          'bom-ref': STABLE.objRevenue,
+          name: 'Protect checkout revenue',
+          description: 'Prevent fraudulent or tampered orders from being fulfilled.',
+          criticality: 'high',
+        },
+      ],
+      useCases: [
+        {
+          'bom-ref': STABLE.ucCheckout,
+          name: 'Place order',
+          description: 'Customer submits cart and payment; order is persisted and charged.',
+        },
+      ],
+    },
+    profiles: {
+      threatProfiles: [
+        {
+          'bom-ref': STABLE.profileOpportunist,
+          name: 'Opportunistic external attacker',
+          description: 'Commodity tooling, no insider access, profit-motivated.',
+          sophistication: 'low',
+          resources: 'commodity',
+          skillSet: ['web-app', 'credential-theft'],
+        },
+      ],
+    },
     threats: {
       methodologies: ['STRIDE', 'LINDDUN', 'attack-tree'],
-      threats: [tSpoof, tTamper, tDisclose, tDos, tEop, tLink],
+      threats: [tSpoof, tTamper, tDisclose, tDos, tEop, tLink, tLogging],
       scenarios: [scSpoof, scInsider, scTamper, scDos, scLink],
       attackPatterns,
       attackTrees,
+      attackPaths,
+      abuseCases,
+      trustBoundaries,
     },
     risks: {
       risks: [
@@ -656,8 +835,10 @@ export function createSampleBom(): CycloneDxBom {
                 'Require mTLS and short-lived signed tokens for service-to-service calls; rotate keys automatically (NIST SP 800-57 key management practices).',
               cost: 'medium',
               addresses: [STABLE.tSpoof],
+              controls: [STABLE.ctrlMtls],
             },
           ],
+          status: 'mitigated',
         }),
         createRisk({
           'bom-ref': STABLE.riskPii,
@@ -685,6 +866,7 @@ export function createSampleBom(): CycloneDxBom {
                 'Enforce least-privilege IAM, column-level encryption for PII, and query auditing.',
               cost: 'high',
               addresses: [STABLE.tDisclose],
+              controls: [STABLE.ctrlIam],
             },
             {
               'bom-ref': STABLE.respInsure,
@@ -694,6 +876,7 @@ export function createSampleBom(): CycloneDxBom {
               cost: 'medium',
             },
           ],
+          status: 'assessed',
         }),
         createRisk({
           'bom-ref': STABLE.riskAvail,
@@ -721,6 +904,7 @@ export function createSampleBom(): CycloneDxBom {
                 'Deploy WAF, rate limiting, and autoscaling; rehearse capacity for peak events.',
               cost: 'medium',
               addresses: [STABLE.tDos],
+              controls: [STABLE.ctrlWaf],
             },
             {
               'bom-ref': STABLE.respAcceptDos,

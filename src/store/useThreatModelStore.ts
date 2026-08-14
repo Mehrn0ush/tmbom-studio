@@ -34,8 +34,12 @@ import {
 import { createSampleBom } from '../lib/sample'
 import { suggestLinddunThreats, suggestStrideThreats } from '../lib/catalog'
 import { applySession, type WorkshopSession } from '../lib/session'
+import {
+  createSpecStoreSlice,
+  type SpecStoreSlice,
+} from './specStoreSlice'
 
-interface ThreatModelState {
+interface ThreatModelState extends SpecStoreSlice {
   bom: CycloneDxBom
   view: WorkspaceView
   selectedRef: string | null
@@ -121,7 +125,8 @@ function bumpVersion(bom: CycloneDxBom) {
 
 export const useThreatModelStore = create<ThreatModelState>()(
   persist(
-    (set, get) => ({
+    (set, get, api) => ({
+      ...createSpecStoreSlice(set, get, api),
       bom: emptyBom('Untitled System'),
       view: 'overview',
       selectedRef: null,

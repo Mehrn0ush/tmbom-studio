@@ -123,63 +123,6 @@ export const MITRE_ATTACK_CATEGORIES: Array<{
   { id: 'impact', label: 'Impact', letter: 'TA0040', description: 'Manipulate, interrupt, or destroy systems/data.' },
 ]
 
-/** Curated CAPEC entries for quick add (Common Attack Pattern Enumeration and Classification) */
-export const CAPEC_CATALOG: Array<{
-  capecId: number
-  name: string
-  description: string
-  techniques?: Array<{ id: string; name: string; tactic: string }>
-}> = [
-  {
-    capecId: 115,
-    name: 'Authentication Bypass',
-    description: 'An adversary bypasses authentication to access a target.',
-    techniques: [
-      { id: 'T1078', name: 'Valid Accounts', tactic: 'initial-access' },
-    ],
-  },
-  {
-    capecId: 125,
-    name: 'Flooding',
-    description: 'An adversary overwhelms a target with excessive traffic or requests.',
-    techniques: [
-      { id: 'T1498', name: 'Network Denial of Service', tactic: 'impact' },
-    ],
-  },
-  {
-    capecId: 66,
-    name: 'SQL Injection',
-    description: 'An adversary exploits insufficient input validation to inject SQL.',
-    techniques: [
-      { id: 'T1190', name: 'Exploit Public-Facing Application', tactic: 'initial-access' },
-    ],
-  },
-  {
-    capecId: 21,
-    name: 'Exploitation of Trusted Identifiers',
-    description: 'An adversary abuses trusted identifiers or credentials.',
-    techniques: [
-      { id: 'T1550', name: 'Use Alternate Authentication Material', tactic: 'defense-evasion' },
-    ],
-  },
-  {
-    capecId: 94,
-    name: 'Adversary in the Middle (AiTM)',
-    description: 'An adversary positions between parties to tamper with or observe communications.',
-    techniques: [
-      { id: 'T1557', name: 'Adversary-in-the-Middle', tactic: 'credential-access' },
-    ],
-  },
-  {
-    capecId: 593,
-    name: 'Session Hijacking',
-    description: 'An adversary takes over an authenticated session.',
-    techniques: [
-      { id: 'T1539', name: 'Steal Web Session Cookie', tactic: 'credential-access' },
-    ],
-  },
-]
-
 /** Common CycloneDX external reference types for supply-chain linkage */
 export const LINK_REFERENCE_TYPES = [
   { id: 'bom', label: 'BOM / SBOM', hint: 'Link to another CycloneDX BOM (often via BOM-Link URN)' },

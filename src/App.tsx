@@ -1,12 +1,21 @@
+import { lazy, Suspense } from 'react'
 import { useThreatModelStore } from './store/useThreatModelStore'
 import type { WorkspaceView } from './types/cyclonedx'
 import { OverviewView } from './components/overview/OverviewView'
 import { BlueprintView } from './components/blueprint/BlueprintView'
+import { AssumptionsView } from './components/blueprint/AssumptionsView'
 import { ThreatsView } from './components/threats/ThreatsView'
 import { AttackTreesView } from './components/threats/AttackTreesView'
-import { AttackPatternsView } from './components/threats/AttackPatternsView'
+import { AttackPathsView } from './components/threats/AttackPathsView'
+import { AbuseCasesView } from './components/threats/AbuseCasesView'
 import { ScenariosView } from './components/risks/ScenariosView'
 import { RisksView } from './components/risks/RisksView'
+import { ControlsView } from './components/controls/ControlsView'
+import { DefinitionsView } from './components/definitions/DefinitionsView'
+import { ProfilesView } from './components/profiles/ProfilesView'
+import { TrustBoundariesView } from './components/trust/TrustBoundariesView'
+import { ComponentsView } from './components/components/ComponentsView'
+import { AdvancedView } from './components/advanced/AdvancedView'
 import { SessionView } from './components/session/SessionView'
 import { LinksView } from './components/links/LinksView'
 import { ReportView } from './components/report/ReportView'
@@ -16,16 +25,31 @@ import {
 } from './components/export/ExportView'
 import { getPrimaryBlueprint } from './lib/bom'
 
+const AttackPatternsView = lazy(() =>
+  import('./components/threats/AttackPatternsView').then((m) => ({
+    default: m.AttackPatternsView,
+  })),
+)
+
 const NAV: Array<{ id: WorkspaceView; label: string }> = [
   { id: 'overview', label: 'Overview' },
   { id: 'blueprint', label: 'Blueprint' },
+  { id: 'assumptions', label: 'Scope & assumptions' },
   { id: 'threats', label: 'Threats' },
   { id: 'attack-patterns', label: 'CAPEC' },
   { id: 'attack-trees', label: 'Attack trees' },
+  { id: 'attack-paths', label: 'Attack paths' },
+  { id: 'abuse-cases', label: 'Abuse cases' },
+  { id: 'trust-boundaries', label: 'Trust boundaries' },
+  { id: 'controls', label: 'Controls' },
+  { id: 'definitions', label: 'Definitions' },
+  { id: 'profiles', label: 'Profiles' },
   { id: 'scenarios', label: 'Scenarios' },
   { id: 'risks', label: 'Risks' },
+  { id: 'components', label: 'Components' },
   { id: 'session', label: 'Session' },
   { id: 'links', label: 'Links' },
+  { id: 'advanced', label: 'Advanced BOM' },
   { id: 'report', label: 'Report' },
   { id: 'export', label: 'Projects' },
 ]
@@ -33,13 +57,22 @@ const NAV: Array<{ id: WorkspaceView; label: string }> = [
 const TITLES: Record<WorkspaceView, string> = {
   overview: 'Overview',
   blueprint: 'Architecture blueprint',
+  assumptions: 'Scope & assumptions',
   threats: 'Threat catalog',
   'attack-patterns': 'CAPEC attack patterns',
   'attack-trees': 'Attack trees',
+  'attack-paths': 'Attack paths',
+  'abuse-cases': 'Abuse cases',
+  'trust-boundaries': 'Trust boundaries',
+  controls: 'Controls',
+  definitions: 'Definitions',
+  profiles: 'Threat profiles',
   scenarios: 'Threat scenarios',
   risks: 'Risk register',
+  components: 'SBOM components',
   session: 'Workshop session',
   links: 'BOM-Link & references',
+  advanced: 'Advanced BOM sections',
   report: 'Risk report',
   export: 'Projects / Export',
 }
@@ -107,7 +140,8 @@ export default function App() {
             <h2>{TITLES[view]}</h2>
             <div className="meta">
               {systemName} · v{bom.version} · {bp.assets?.length ?? 0} assets ·{' '}
-              {bom.threats?.threats?.length ?? 0} threats
+              {bom.threats?.threats?.length ?? 0} threats ·{' '}
+              {bom.controls?.length ?? 0} controls
             </div>
           </div>
           <div className="btn-row">
@@ -131,13 +165,30 @@ export default function App() {
         <main className="content">
           {view === 'overview' && <OverviewView />}
           {view === 'blueprint' && <BlueprintView />}
+          {view === 'assumptions' && <AssumptionsView />}
           {view === 'threats' && <ThreatsView />}
-          {view === 'attack-patterns' && <AttackPatternsView />}
+          {view === 'attack-patterns' && (
+            <Suspense
+              fallback={
+                <div className="panel empty">Loading CAPEC catalog…</div>
+              }
+            >
+              <AttackPatternsView />
+            </Suspense>
+          )}
           {view === 'attack-trees' && <AttackTreesView />}
+          {view === 'attack-paths' && <AttackPathsView />}
+          {view === 'abuse-cases' && <AbuseCasesView />}
+          {view === 'trust-boundaries' && <TrustBoundariesView />}
+          {view === 'controls' && <ControlsView />}
+          {view === 'definitions' && <DefinitionsView />}
+          {view === 'profiles' && <ProfilesView />}
           {view === 'scenarios' && <ScenariosView />}
           {view === 'risks' && <RisksView />}
+          {view === 'components' && <ComponentsView />}
           {view === 'session' && <SessionView />}
           {view === 'links' && <LinksView />}
+          {view === 'advanced' && <AdvancedView />}
           {view === 'report' && <ReportView />}
           {view === 'export' && <ExportView />}
         </main>

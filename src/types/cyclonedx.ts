@@ -251,8 +251,12 @@ export interface Asset {
   description?: string
   type?: AssetType | { name: string; description?: string }
   zone?: RefLinkType
+  componentRef?: RefLinkType
+  partyRef?: RefLinkType
+  responsibilities?: string[]
   tags?: string[]
   properties?: Property[]
+  externalReferences?: ExternalReference[]
   /** Tool-local layout (exported under properties) */
   _position?: DiagramPosition
 }
@@ -307,24 +311,35 @@ export interface Blueprint {
   name: string
   description?: string
   modelTypes: ModelType[]
+  scope?: import('./cyclonedx-extended').BlueprintScope
   assets?: Asset[]
   zones?: Zone[]
   boundaries?: Boundary[]
   flows?: Flow[]
   actors?: Actor[]
-  assumptions?: Array<{ 'bom-ref'?: RefType; description: string }>
+  assumptions?: import('./cyclonedx-extended').Assumption[]
   properties?: Property[]
+  externalReferences?: ExternalReference[]
 }
+
+export type ThreatOrigin =
+  import('./cyclonedx-extended').ThreatOrigin
 
 export interface Threat {
   'bom-ref': RefType
   name: string
   description?: string
   source?: string
+  origin?: ThreatOrigin
   categories?: ThreatCategory[]
+  weaknesses?: Array<{ 'bom-ref'?: RefType; name?: string; description?: string; cweId?: number }>
+  relatedVulnerabilities?: RefLinkType[]
   affectedAssets?: RefLinkType[]
   attackPatterns?: RefLinkType[]
   attackTrees?: RefLinkType[]
+  abuseCases?: RefLinkType[]
+  killChainPhase?: string
+  relatedBusinessObjectives?: RefLinkType[]
   mitigations?: RefLinkType[]
   properties?: Property[]
   externalReferences?: ExternalReference[]
@@ -354,6 +369,8 @@ export interface ThreatScenario {
   description?: string
   threats: RefLinkType[]
   actor?: RefLinkType
+  threatProfile?: RefLinkType
+  motivation?: string[]
   intent?: Intent
   accessLevel?: AccessLevel
   likelihood?: Likelihood
@@ -361,7 +378,9 @@ export interface ThreatScenario {
   riskScore?: RiskScore
   affectedAssets?: RefLinkType[]
   relatedRisks?: RefLinkType[]
+  relatedVulnerabilities?: RefLinkType[]
   properties?: Property[]
+  externalReferences?: ExternalReference[]
 }
 
 export interface RiskResponse {
@@ -369,7 +388,9 @@ export interface RiskResponse {
   strategy: RiskResponseStrategy
   description?: string
   cost?: 'trivial' | 'low' | 'medium' | 'high' | 'extreme'
+  controls?: RefLinkType[]
   addresses?: RefLinkType[]
+  status?: string
   properties?: Property[]
 }
 
@@ -380,11 +401,16 @@ export interface Risk {
   description?: string
   domains?: Array<{ type: RiskDomainType | { name: string } }>
   relatedThreats?: RefLinkType[]
+  relatedVulnerabilities?: RefLinkType[]
+  relatedRequirements?: RefLinkType[]
+  relatedBusinessObjectives?: RefLinkType[]
   affects?: RefLinkType[]
   inherentRisk?: Rating
   residualRisk?: Rating
+  targetRisk?: Rating
   responses?: RiskResponse[]
-  status?: string | { name: string }
+  status?: import('./cyclonedx-extended').RiskStatus
+  owner?: import('./cyclonedx-extended').PartyRef
   properties?: Property[]
 }
 
@@ -393,12 +419,16 @@ export interface ThreatsSection {
   scenarios?: ThreatScenario[]
   attackPatterns?: AttackPattern[]
   attackTrees?: AttackTree[]
+  attackPaths?: import('./cyclonedx-extended').AttackPath[]
+  abuseCases?: import('./cyclonedx-extended').AbuseCase[]
+  trustBoundaries?: import('./cyclonedx-extended').TrustBoundary[]
   methodologies?: Methodology[]
   properties?: Property[]
 }
 
 export interface RisksSection {
   risks?: Risk[]
+  assessments?: import('./cyclonedx-extended').RiskAssessment[]
   properties?: Property[]
 }
 
@@ -422,27 +452,76 @@ export interface BomMetadata {
 
 export interface CycloneDxBom {
   $schema?: string
+  $comment?: string
   specFormat: SpecFormat
   specVersion: string
   serialNumber?: string
   version?: number
   metadata?: BomMetadata
+  components?: import('./cyclonedx-extended').Component[]
+  services?: unknown[]
+  dependencies?: unknown[]
+  compositions?: unknown[]
+  vulnerabilities?: unknown[]
   blueprints?: Blueprint[]
   threats?: ThreatsSection
   risks?: RisksSection
+  controls?: import('./cyclonedx-extended').Control[]
+  definitions?: import('./cyclonedx-extended').DefinitionsSection
+  profiles?: import('./cyclonedx-extended').ProfilesSection
+  annotations?: unknown[]
+  formulation?: unknown
+  declarations?: unknown
+  citations?: unknown[]
+  perspectives?: unknown[]
   properties?: Property[]
   externalReferences?: ExternalReference[]
+  signatures?: unknown
 }
 
 export type WorkspaceView =
   | 'overview'
   | 'blueprint'
+  | 'assumptions'
   | 'threats'
   | 'scenarios'
-  | 'attack-trees'
   | 'attack-patterns'
+  | 'attack-trees'
+  | 'attack-paths'
+  | 'abuse-cases'
+  | 'trust-boundaries'
+  | 'controls'
+  | 'definitions'
+  | 'profiles'
   | 'risks'
+  | 'components'
   | 'session'
   | 'links'
   | 'report'
+  | 'advanced'
   | 'export'
+
+export type {
+  Assumption,
+  AttackPath,
+  AttackPathStep,
+  AbuseCase,
+  BlueprintScope,
+  BusinessObjective,
+  Component,
+  Control,
+  DataProfile,
+  DefinitionsSection,
+  ProfilesSection,
+  Requirement,
+  RiskStatus,
+  ThreatProfile,
+  TrustBoundary,
+  UseCaseDefinition,
+} from './cyclonedx-extended'
+
+export {
+  IN_SCOPE_PROPERTY,
+  readThreatInScope,
+  writeThreatInScope,
+} from './cyclonedx-extended'

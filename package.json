@@ -16,6 +16,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "generate:example": "esbuild scripts/generate-example.ts --bundle --platform=node --format=esm --outfile=scripts/generate-example.bundle.mjs && node scripts/generate-example.bundle.mjs && rm -f scripts/generate-example.bundle.mjs",
+    "generate:capec": "node scripts/generate-capec-catalog.mjs",
     "validate:example": "node scripts/validate-example.mjs",
     "ci": "npm run build && npm run validate:example"
   },

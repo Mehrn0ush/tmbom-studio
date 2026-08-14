@@ -7,6 +7,10 @@ import {
 } from '../../lib/catalog'
 import { getPrimaryBlueprint } from '../../lib/bom'
 import type { Methodology, Threat, ThreatTaxonomy } from '../../types/cyclonedx'
+import {
+  readThreatInScope,
+  writeThreatInScope,
+} from '../../types/cyclonedx'
 
 function categoriesFor(taxonomy: ThreatTaxonomy) {
   if (taxonomy === 'LINDDUN') return LINDDUN_CATEGORIES
@@ -33,7 +37,11 @@ export function ThreatsView() {
   const assets = getPrimaryBlueprint(bom).assets ?? []
   const trees = bom.threats?.attackTrees ?? []
   const patterns = bom.threats?.attackPatterns ?? []
+  const controls = bom.controls ?? []
   const selected = threats.find((t) => t['bom-ref'] === selectedRef)
+  const selectedInScope = selected
+    ? readThreatInScope(selected.properties)
+    : undefined
 
   const [taxonomy, setTaxonomy] = useState<ThreatTaxonomy>('STRIDE')
   const [name, setName] = useState('')
@@ -160,7 +168,12 @@ export function ThreatsView() {
                   onClick={() => setSelectedRef(t['bom-ref'])}
                 >
                   <div>
-                    <h4>{t.name}</h4>
+                    <h4>
+                      {readThreatInScope(t.properties) === false
+                        ? '⌀ '
+                        : ''}
+                      {t.name}
+                    </h4>
                     <p>{t.description}</p>
                   </div>
                 </button>
@@ -194,6 +207,69 @@ export function ThreatsView() {
                 })
               }
             />
+          </div>
+          <div className="field">
+            <label>Source</label>
+            <input
+              value={selected.source ?? ''}
+              onChange={(e) =>
+                updateThreat(selected['bom-ref'], { source: e.target.value })
+              }
+              placeholder="Workshop, security doc, reporter ticket…"
+            />
+          </div>
+          <div className="field">
+            <label>Origin (NIST SP 800-30)</label>
+            <select
+              value={
+                typeof selected.origin === 'string' ? selected.origin : ''
+              }
+              onChange={(e) =>
+                updateThreat(selected['bom-ref'], {
+                  origin: e.target.value
+                    ? (e.target.value as Threat['origin'])
+                    : undefined,
+                })
+              }
+            >
+              <option value="">—</option>
+              <option value="adversarial">adversarial</option>
+              <option value="accidental">accidental</option>
+              <option value="structural">structural</option>
+              <option value="environmental">environmental</option>
+            </select>
+          </div>
+          <div className="field">
+            <label>In scope for this component</label>
+            <select
+              value={
+                selectedInScope === undefined
+                  ? ''
+                  : selectedInScope
+                    ? 'true'
+                    : 'false'
+              }
+              onChange={(e) => {
+                const v = e.target.value
+                updateThreat(selected['bom-ref'], {
+                  properties: writeThreatInScope(
+                    selected.properties,
+                    v === '' ? undefined : v === 'true',
+                  ),
+                })
+              }}
+            >
+              <option value="">unspecified</option>
+              <option value="true">in scope (producer responsibility)</option>
+              <option value="false">
+                out of scope (documented exclusion)
+              </option>
+            </select>
+            <p className="muted" style={{ marginTop: 4 }}>
+              Stored as <span className="mono">cyclonedx:in-scope</span> in
+              threat properties (interoperable with ASF{' '}
+              <span className="mono">asf:in-scope</span>).
+            </p>
           </div>
           <div className="field">
             <label>Primary taxonomy category</label>
@@ -275,6 +351,26 @@ export function ThreatsView() {
                 <option key={p['bom-ref']} value={p['bom-ref']}>
                   {p.capecId != null ? `CAPEC-${p.capecId}: ` : ''}
                   {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label>Mitigating controls</label>
+            <select
+              multiple
+              value={selected.mitigations ?? []}
+              onChange={(e) => {
+                const values = Array.from(e.target.selectedOptions).map(
+                  (o) => o.value,
+                )
+                updateThreat(selected['bom-ref'], { mitigations: values })
+              }}
+              style={{ minHeight: 80 }}
+            >
+              {controls.map((c) => (
+                <option key={c['bom-ref']} value={c['bom-ref']}>
+                  {c.name}
                 </option>
               ))}
             </select>

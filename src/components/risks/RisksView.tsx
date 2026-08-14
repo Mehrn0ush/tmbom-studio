@@ -12,6 +12,7 @@ import type {
   ImpactLevel,
   LikelihoodLevel,
   RiskResponseStrategy,
+  RiskStatus,
 } from '../../types/cyclonedx'
 
 export function RisksView() {
@@ -24,6 +25,7 @@ export function RisksView() {
 
   const risks = bom.risks?.risks ?? []
   const threats = bom.threats?.threats ?? []
+  const controls = bom.controls ?? []
   const selected = risks.find((r) => r['bom-ref'] === selectedRef)
 
   const [name, setName] = useState('')
@@ -138,6 +140,33 @@ export function RisksView() {
               />
             </div>
             <div className="field">
+              <label>Status</label>
+              <select
+                value={
+                  typeof selected.status === 'string' ? selected.status : ''
+                }
+                onChange={(e) =>
+                  updateRisk(selected['bom-ref'], {
+                    status: (e.target.value || undefined) as RiskStatus | undefined,
+                  })
+                }
+              >
+                <option value="">—</option>
+                {[
+                  'identified',
+                  'assessed',
+                  'mitigated',
+                  'accepted',
+                  'transferred',
+                  'retired',
+                ].map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
               <label>Related threats</label>
               <select
                 multiple
@@ -217,6 +246,66 @@ export function RisksView() {
               </select>
             </div>
             <div className="field">
+              <label>Residual likelihood</label>
+              <select
+                value={selected.residualRisk?.likelihood?.level ?? ''}
+                onChange={(e) => {
+                  const level = e.target.value as LikelihoodLevel
+                  if (!level) return
+                  const impact =
+                    selected.residualRisk?.impact?.level ?? 'moderate'
+                  updateRisk(selected['bom-ref'], {
+                    residualRisk: {
+                      ...selected.residualRisk,
+                      likelihood: { level },
+                      impact: { level: impact, polarity: 'harm' },
+                      score: {
+                        level: computeRiskLevel(level, impact),
+                        methodology: 'qualitative-matrix',
+                      },
+                    },
+                  })
+                }}
+              >
+                <option value="">—</option>
+                {LIKELIHOOD_LEVELS.map((l) => (
+                  <option key={l} value={l}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>Residual impact</label>
+              <select
+                value={selected.residualRisk?.impact?.level ?? ''}
+                onChange={(e) => {
+                  const level = e.target.value as ImpactLevel
+                  if (!level) return
+                  const likelihood =
+                    selected.residualRisk?.likelihood?.level ?? 'medium'
+                  updateRisk(selected['bom-ref'], {
+                    residualRisk: {
+                      ...selected.residualRisk,
+                      likelihood: { level: likelihood },
+                      impact: { level, polarity: 'harm' },
+                      score: {
+                        level: computeRiskLevel(likelihood, level),
+                        methodology: 'qualitative-matrix',
+                      },
+                    },
+                  })
+                }}
+              >
+                <option value="">—</option>
+                {IMPACT_LEVELS.map((l) => (
+                  <option key={l} value={l}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
               <label>Add response</label>
               <select
                 defaultValue=""
@@ -264,6 +353,28 @@ export function RisksView() {
                     updateRisk(selected['bom-ref'], { responses })
                   }}
                 />
+                <label>Linked controls</label>
+                <select
+                  multiple
+                  value={resp.controls ?? []}
+                  onChange={(e) => {
+                    const responses = [...(selected.responses ?? [])]
+                    responses[idx] = {
+                      ...resp,
+                      controls: Array.from(e.target.selectedOptions).map(
+                        (o) => o.value,
+                      ),
+                    }
+                    updateRisk(selected['bom-ref'], { responses })
+                  }}
+                  style={{ minHeight: 70 }}
+                >
+                  {controls.map((c) => (
+                    <option key={c['bom-ref']} value={c['bom-ref']}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
                 <button
                   className="btn btn-danger"
                   type="button"

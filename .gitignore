@@ -13,6 +13,9 @@ dist-ssr
 *.local
 scripts/*.bundle.mjs
 
+# CAPEC zip archives (CSVs under data/capec/ are kept)
+data/capec/*.csv.zip
+
 # Editor
 .vscode/*
 !.vscode/extensions.json

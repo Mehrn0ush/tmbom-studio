@@ -1,6 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useThreatModelStore } from '../../store/useThreatModelStore'
-import { CAPEC_CATALOG } from '../../lib/catalog'
+import {
+  CAPEC_META,
+  filterCapecCatalog,
+  type CapecCatalogView,
+} from '../../lib/capecCatalog'
 
 export function AttackPatternsView() {
   const bom = useThreatModelStore((s) => s.bom)
@@ -14,9 +18,19 @@ export function AttackPatternsView() {
   const threats = bom.threats?.threats ?? []
   const selected = patterns.find((p) => p['bom-ref'] === selectedRef)
 
-  const [capecPick, setCapecPick] = useState(String(CAPEC_CATALOG[0].capecId))
+  const [view, setView] = useState<CapecCatalogView>('owasp')
+  const [query, setQuery] = useState('')
+  const [capecPick, setCapecPick] = useState('')
   const [customName, setCustomName] = useState('')
   const [customCapec, setCustomCapec] = useState('')
+
+  const filtered = useMemo(
+    () => filterCapecCatalog(view, query),
+    [view, query],
+  )
+
+  const pick =
+    filtered.find((c) => String(c.capecId) === capecPick) ?? filtered[0]
 
   const linkedThreats = threats.filter((t) =>
     t.attackPatterns?.includes(selected?.['bom-ref'] ?? ''),
@@ -30,21 +44,66 @@ export function AttackPatternsView() {
             CAPEC attack patterns
           </h3>
           <p className="muted" style={{ margin: 0 }}>
-            First-class CycloneDX <span className="mono">attackPatterns</span>{' '}
-            with <span className="mono">capecId</span>. Techniques can carry
-            MITRE ATT&amp;CK IDs. Link patterns to threats from the Threats
-            inspector.
+            Catalog from{' '}
+            <a
+              href={CAPEC_META.source}
+              target="_blank"
+              rel="noreferrer"
+            >
+              CAPEC List {CAPEC_META.version}
+            </a>{' '}
+            ({CAPEC_META.count} patterns). Default view is OWASP Related
+            Patterns (View 659, {CAPEC_META.owaspRelatedCount} entries). Full
+            dictionary is View 2000; Mechanisms (1000) / Domains (3000) CSVs are
+            vendored under <span className="mono">data/capec/</span>.
           </p>
           <div className="btn-row" style={{ alignItems: 'end' }}>
-            <div className="field" style={{ flex: 1 }}>
-              <label>Add from CAPEC catalog</label>
+            <div className="field">
+              <label>CAPEC view</label>
               <select
-                value={capecPick}
-                onChange={(e) => setCapecPick(e.target.value)}
+                value={view}
+                onChange={(e) => {
+                  setView(e.target.value as CapecCatalogView)
+                  setCapecPick('')
+                }}
               >
-                {CAPEC_CATALOG.map((c) => (
+                <option value="owasp">
+                  OWASP Related (View 659)
+                </option>
+                <option value="all">
+                  Full dictionary (View 2000)
+                </option>
+              </select>
+            </div>
+            <div className="field" style={{ flex: 1 }}>
+              <label>Search</label>
+              <input
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value)
+                  setCapecPick('')
+                }}
+                placeholder="ID, name, or description"
+              />
+            </div>
+          </div>
+          <div className="btn-row" style={{ alignItems: 'end' }}>
+            <div className="field" style={{ flex: 1 }}>
+              <label>
+                Add from catalog ({filtered.length} shown)
+              </label>
+              <select
+                value={pick ? String(pick.capecId) : ''}
+                onChange={(e) => setCapecPick(e.target.value)}
+                disabled={filtered.length === 0}
+              >
+                {filtered.length === 0 && (
+                  <option value="">No matches</option>
+                )}
+                {filtered.map((c) => (
                   <option key={c.capecId} value={c.capecId}>
                     CAPEC-{c.capecId} — {c.name}
+                    {c.owaspRelated ? ' · OWASP' : ''}
                   </option>
                 ))}
               </select>
@@ -52,16 +111,14 @@ export function AttackPatternsView() {
             <button
               className="btn btn-primary"
               type="button"
+              disabled={!pick}
               onClick={() => {
-                const entry = CAPEC_CATALOG.find(
-                  (c) => String(c.capecId) === capecPick,
-                )
-                if (!entry) return
+                if (!pick) return
                 addAttackPattern({
-                  name: entry.name,
-                  description: entry.description,
-                  capecId: entry.capecId,
-                  techniques: entry.techniques,
+                  name: pick.name,
+                  description: pick.description,
+                  capecId: pick.capecId,
+                  techniques: pick.techniques,
                 })
               }}
             >
@@ -192,7 +249,9 @@ export function AttackPatternsView() {
                     .map((line) => line.trim())
                     .filter(Boolean)
                     .map((line) => {
-                      const [id, name, tactic] = line.split('|').map((s) => s.trim())
+                      const [id, name, tactic] = line
+                        .split('|')
+                        .map((s) => s.trim())
                       return { id, name, tactic }
                     })
                   updateAttackPattern(selected['bom-ref'], { techniques })

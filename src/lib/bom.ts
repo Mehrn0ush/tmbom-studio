@@ -62,10 +62,25 @@ export function emptyBom(name = 'Untitled System'): CycloneDxBom {
       methodologies: ['STRIDE'],
       threats: [],
       scenarios: [],
+      attackPaths: [],
+      abuseCases: [],
+      trustBoundaries: [],
     },
     risks: {
       risks: [],
+      assessments: [],
     },
+    controls: [],
+    definitions: {
+      requirements: [],
+      businessObjectives: [],
+      useCases: [],
+    },
+    profiles: {
+      threatProfiles: [],
+      dataProfiles: [],
+    },
+    components: [],
   }
 }
 
@@ -221,7 +236,15 @@ export function fromImportBom(raw: unknown): CycloneDxBom {
   }
 
   bom.threats ??= { methodologies: ['STRIDE'], threats: [], scenarios: [] }
-  bom.risks ??= { risks: [] }
+  bom.risks ??= { risks: [], assessments: [] }
+  bom.controls ??= []
+  bom.definitions ??= {
+    requirements: [],
+    businessObjectives: [],
+    useCases: [],
+  }
+  bom.profiles ??= { threatProfiles: [], dataProfiles: [] }
+  bom.components ??= []
   bom.blueprints ??= []
   if (!bom.blueprints.length) {
     getPrimaryBlueprint(bom)

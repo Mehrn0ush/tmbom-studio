@@ -34,8 +34,28 @@ Schemas follow the CycloneDX [`2.0-dev-threatmodeling`](https://github.com/Cyclo
 
 - A replacement for your GRC / risk-register platform
 - A multi-user real-time collaboration server (yet)
-- A complete implementation of every CycloneDX 2.0 construct (attack trees, full LINDDUN UI, BOM-Link automation, etc.)
-- A final frozen standard — **CycloneDX 2.0 threat-modeling is still evolving** (`2.0-dev-threatmodeling`). Pin schemas, expect field changes, and re-validate exports when you upgrade.
+- A frozen standard — **CycloneDX 2.0 threat-modeling is still evolving** (`2.0-dev-threatmodeling`). Pin schemas, expect field changes, and re-validate exports when you upgrade.
+
+---
+
+## CycloneDX 2.0 coverage
+
+ThreatModeler targets the full [`2.0-dev-threatmodeling`](https://github.com/CycloneDX/specification/tree/2.0-dev-threatmodeling) BOM surface. Vendored schemas live under [`schemas/2.0/`](./schemas/2.0/) ([sync notes](./schemas/SYNC.md)).
+
+| Root section | UI | Notes |
+| --- | --- | --- |
+| `metadata`, `properties`, `externalReferences` | Overview, Links, Session | Workshop metadata + BOM-Link refs |
+| `blueprints` | Blueprint | Assets, zones, boundaries, flows |
+| `blueprints[].scope`, `assumptions` | Scope & assumptions | Model boundary + explicit assumptions |
+| `threats` | Threats, CAPEC, Attack trees/paths, Abuse cases, Trust boundaries | Full threats section including methodologies |
+| `controls` | Controls | Preventive/detective controls linked from risks |
+| `definitions` | Definitions | Requirements, business objectives, use cases |
+| `profiles` | Profiles | Threat (and data) profiles |
+| `risks` | Risks, Scenarios | Ratings, status, responses → controls |
+| `components` | Components | SBOM-style component inventory |
+| `services`, `dependencies`, `compositions`, `vulnerabilities`, `annotations`, `citations`, `perspectives`, `formulation`, `declarations`, `signatures` | Advanced BOM | JSON round-trip editor for remaining root sections |
+
+**Responsibility boundary (interim):** the spec has no normative per-threat in-scope field. ThreatModeler uses `threat.properties[]` with `cyclonedx:in-scope=true|false` (also reads legacy `asf:in-scope`) so library-style models can mark out-of-scope threats for downstream consumers.
 
 ---
 
@@ -43,11 +63,16 @@ Schemas follow the CycloneDX [`2.0-dev-threatmodeling`](https://github.com/Cyclo
 
 | Area | Support |
 | --- | --- |
-| `blueprints` | Visual data-flow: assets, zones, trust boundaries, flows |
-| `threats` | STRIDE + LINDDUN + MITRE ATT&CK categories; CAPEC `attackPatterns`; scenarios; attack trees |
-| `risks` | Statements, inherent/residual ratings, responses |
+| `blueprints` | Visual data-flow: assets, zones, trust boundaries, flows, scope, assumptions |
+| `threats` | STRIDE + LINDDUN + MITRE ATT&CK; CAPEC 3.9; scenarios; attack trees/paths; abuse cases; trust boundaries; origin + in-scope |
+| `controls` | Control catalog with category, status, applies-to |
+| `definitions` | Requirements, business objectives, use cases |
+| `profiles` | Threat profiles |
+| `risks` | Statements, inherent/residual ratings, status, responses linked to controls |
+| `components` | Component inventory (SBOM interchange) |
 | `session` | Workshop participants + `.session.json` package export |
 | `links` | BOM-Link URNs and SBOM / VEX external references |
+| `advanced` | JSON editor for all other CycloneDX 2.0 root sections |
 | `report` | Printable / Save-as-PDF risk summary for reviews |
 | Persistence | Save/Open project files + recent drafts (+ `localStorage` cache) |
 | Validation | Structural checks in the UI before save; sample checked in CI |
@@ -79,8 +104,24 @@ Open the URL Vite prints (usually http://localhost:5173).
 | `npm run build:pages` | Production build with GitHub Pages base path |
 | `npm run preview` | Preview production build |
 | `npm run generate:example` | Regenerate `examples/checkout-api.cdx.json` |
+| `npm run generate:capec` | Rebuild `src/data/capec-catalog.json` from vendored CAPEC 3.9 CSVs |
 | `npm run validate:example` | Structural + schema check of the sample TM-BOM |
 | `npm run ci` | `build` + `validate:example` |
+
+---
+
+## CAPEC data
+
+Vendored under [`data/capec/`](./data/capec/) from [CAPEC List Version 3.9](https://capec.mitre.org/data/downloads.html) ([MITRE Terms of Use](https://capec.mitre.org/about/termsofuse.html)):
+
+| View | Name | Role in the app |
+| ---: | --- | --- |
+| 659 | OWASP Related Patterns | Default picker in Attack Patterns |
+| 2000 | Comprehensive Dictionary | Full searchable catalog |
+| 1000 | Mechanisms of Attack | Vendored CSV (hierarchy is in HTML/XML products) |
+| 3000 | Domains of Attack | Vendored CSV (same rows as 1000 in 3.9 CSV export) |
+
+The UI catalog is generated into `src/data/capec-catalog.json` (`npm run generate:capec`). ATT&CK technique IDs on patterns come from CAPEC taxonomy mappings where present.
 
 ---
 
@@ -100,7 +141,7 @@ One-time Pages setting (if the site is not live yet):
 ## Roadmap (later)
 
 - Real-time multi-user editing (beyond session packages)
-- Richer attack-path / CAPEC library UX
+- CAPEC Mechanisms / Domains hierarchical browser (Views 1000 / 3000 XML)
 - Deeper automated SBOM↔TM-BOM correlation
 
 ---
