@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useCallback, useState } from 'react'
 import { useThreatModelStore } from './store/useThreatModelStore'
 import type { WorkspaceView } from './types/cyclonedx'
 import { OverviewView } from './components/overview/OverviewView'
@@ -23,7 +23,9 @@ import {
   ExportView,
   useExampleQueryBootstrap,
 } from './components/export/ExportView'
+import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import { getPrimaryBlueprint } from './lib/bom'
+import { useBomValidation } from './hooks/useBomValidation'
 
 const AttackPatternsView = lazy(() =>
   import('./components/threats/AttackPatternsView').then((m) => ({
@@ -78,13 +80,18 @@ const TITLES: Record<WorkspaceView, string> = {
 }
 
 export default function App() {
-  useExampleQueryBootstrap()
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null)
+  const onBootstrapError = useCallback((message: string) => {
+    setBootstrapError(message)
+  }, [])
+  useExampleQueryBootstrap(onBootstrapError)
 
   const view = useThreatModelStore((s) => s.view)
   const setView = useThreatModelStore((s) => s.setView)
   const bom = useThreatModelStore((s) => s.bom)
   const loadSample = useThreatModelStore((s) => s.loadSample)
   const newModel = useThreatModelStore((s) => s.newModel)
+  const validation = useBomValidation()
 
   const systemName = bom.metadata?.component?.name ?? 'Untitled'
   const bp = getPrimaryBlueprint(bom)
@@ -145,6 +152,31 @@ export default function App() {
             </div>
           </div>
           <div className="btn-row">
+            {!validation.ok ? (
+              <button
+                className="validation-chip validation-chip-error"
+                type="button"
+                title={validation.errors.map((e) => e.message).join('\n')}
+                onClick={() => setView('export')}
+              >
+                {validation.errors.length} validation error
+                {validation.errors.length === 1 ? '' : 's'}
+              </button>
+            ) : validation.warnings.length > 0 ? (
+              <button
+                className="validation-chip validation-chip-warn"
+                type="button"
+                title={validation.warnings.map((w) => w.message).join('\n')}
+                onClick={() => setView('export')}
+              >
+                {validation.warnings.length} warning
+                {validation.warnings.length === 1 ? '' : 's'}
+              </button>
+            ) : (
+              <span className="validation-chip validation-chip-ok" title="Structural checks passed">
+                Valid
+              </span>
+            )}
             <button
               className="btn"
               type="button"
@@ -162,35 +194,50 @@ export default function App() {
           </div>
         </header>
 
-        <main className="content">
-          {view === 'overview' && <OverviewView />}
-          {view === 'blueprint' && <BlueprintView />}
-          {view === 'assumptions' && <AssumptionsView />}
-          {view === 'threats' && <ThreatsView />}
-          {view === 'attack-patterns' && (
-            <Suspense
-              fallback={
-                <div className="panel empty">Loading CAPEC catalog…</div>
-              }
+        {bootstrapError && (
+          <div className="app-banner app-banner-error" role="alert">
+            <span>{bootstrapError}</span>
+            <button
+              className="btn btn-ghost"
+              type="button"
+              onClick={() => setBootstrapError(null)}
             >
-              <AttackPatternsView />
-            </Suspense>
-          )}
-          {view === 'attack-trees' && <AttackTreesView />}
-          {view === 'attack-paths' && <AttackPathsView />}
-          {view === 'abuse-cases' && <AbuseCasesView />}
-          {view === 'trust-boundaries' && <TrustBoundariesView />}
-          {view === 'controls' && <ControlsView />}
-          {view === 'definitions' && <DefinitionsView />}
-          {view === 'profiles' && <ProfilesView />}
-          {view === 'scenarios' && <ScenariosView />}
-          {view === 'risks' && <RisksView />}
-          {view === 'components' && <ComponentsView />}
-          {view === 'session' && <SessionView />}
-          {view === 'links' && <LinksView />}
-          {view === 'advanced' && <AdvancedView />}
-          {view === 'report' && <ReportView />}
-          {view === 'export' && <ExportView />}
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        <main className="content">
+          <ErrorBoundary key={view} label={TITLES[view]}>
+            {view === 'overview' && <OverviewView />}
+            {view === 'blueprint' && <BlueprintView />}
+            {view === 'assumptions' && <AssumptionsView />}
+            {view === 'threats' && <ThreatsView />}
+            {view === 'attack-patterns' && (
+              <Suspense
+                fallback={
+                  <div className="panel empty">Loading CAPEC catalog…</div>
+                }
+              >
+                <AttackPatternsView />
+              </Suspense>
+            )}
+            {view === 'attack-trees' && <AttackTreesView />}
+            {view === 'attack-paths' && <AttackPathsView />}
+            {view === 'abuse-cases' && <AbuseCasesView />}
+            {view === 'trust-boundaries' && <TrustBoundariesView />}
+            {view === 'controls' && <ControlsView />}
+            {view === 'definitions' && <DefinitionsView />}
+            {view === 'profiles' && <ProfilesView />}
+            {view === 'scenarios' && <ScenariosView />}
+            {view === 'risks' && <RisksView />}
+            {view === 'components' && <ComponentsView />}
+            {view === 'session' && <SessionView />}
+            {view === 'links' && <LinksView />}
+            {view === 'advanced' && <AdvancedView />}
+            {view === 'report' && <ReportView />}
+            {view === 'export' && <ExportView />}
+          </ErrorBoundary>
         </main>
       </div>
     </div>

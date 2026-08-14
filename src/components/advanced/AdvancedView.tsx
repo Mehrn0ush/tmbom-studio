@@ -69,7 +69,11 @@ export function AdvancedView() {
           spellCheck={false}
         />
       </div>
-      {error && <p className="muted">{error}</p>}
+      {error && (
+        <p className="feedback feedback-error" role="alert">
+          {error}
+        </p>
+      )}
       <button
         className="btn btn-primary"
         type="button"
@@ -83,12 +87,20 @@ export function AdvancedView() {
               !Array.isArray(parsed) &&
               typeof parsed !== 'object'
             ) {
-              throw new Error('Expected array or object')
+              throw new Error(
+                `Section "${section}" expects a JSON array, object, or null.`,
+              )
             }
             updateAdvancedSection(section, parsed)
             setError(null)
           } catch (e) {
-            setError(e instanceof Error ? e.message : 'Invalid JSON')
+            if (e instanceof SyntaxError) {
+              setError(
+                'Invalid JSON. Fix the syntax (commas, quotes, brackets) and try again.',
+              )
+              return
+            }
+            setError(e instanceof Error ? e.message : 'Could not apply JSON')
           }
         }}
       >

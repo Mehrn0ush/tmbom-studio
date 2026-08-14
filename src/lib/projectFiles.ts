@@ -87,8 +87,7 @@ export async function openProjectFileWithPicker(): Promise<CycloneDxBom | null> 
       types: [CDX_TYPE],
     })
     const file = await handle.getFile()
-    const text = await file.text()
-    return JSON.parse(text) as CycloneDxBom
+    return await readProjectFromFile(file)
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') {
       return null
@@ -99,7 +98,20 @@ export async function openProjectFileWithPicker(): Promise<CycloneDxBom | null> 
 
 export async function readProjectFromFile(file: File): Promise<CycloneDxBom> {
   const text = await file.text()
-  return JSON.parse(text) as CycloneDxBom
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    throw new Error(
+      `"${file.name}" is not valid JSON. Choose a CycloneDX TM-BOM (.cdx.json) export.`,
+    )
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error(
+      `"${file.name}" must contain a JSON object (CycloneDX TM-BOM).`,
+    )
+  }
+  return parsed as CycloneDxBom
 }
 
 /** Org convention: keep durable models under projects/ in Git */

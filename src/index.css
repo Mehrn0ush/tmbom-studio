@@ -519,6 +519,74 @@ a {
   margin-bottom: 0.35rem;
 }
 
+.feedback {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.feedback-ok {
+  color: var(--accent-ink);
+}
+
+.feedback-warn {
+  color: var(--warn);
+}
+
+.feedback-error {
+  color: var(--danger);
+}
+
+.validation-chip {
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.validation-chip-ok {
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+
+.validation-chip-warn {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 35%, var(--line));
+  background: color-mix(in srgb, var(--warn) 10%, var(--bg-elevated));
+}
+
+.validation-chip-error {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--line));
+  background: color-mix(in srgb, var(--danger) 10%, var(--bg-elevated));
+}
+
+.app-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 1.25rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  font-size: 0.88rem;
+}
+
+.app-banner-error {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, var(--bg-elevated));
+  border-color: color-mix(in srgb, var(--danger) 30%, var(--line));
+}
+
+.error-boundary {
+  max-width: 42rem;
+}
+
 .report-doc h1 {
   margin: 0.25rem 0;
   font-family: var(--font-display);

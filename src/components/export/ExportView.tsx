@@ -10,7 +10,10 @@ import {
   BUNDLED_EXAMPLES,
   rememberRecentProject,
 } from '../../lib/recentProjects'
+import { describeIoError } from '../../lib/ioErrors'
 import { validateTmbom } from '../../lib/validateBom'
+import { toExportBom } from '../../lib/bom'
+import { useBomValidation } from '../../hooks/useBomValidation'
 import type { CycloneDxBom } from '../../types/cyclonedx'
 
 const EXAMPLE_URL = `${import.meta.env.BASE_URL}examples/checkout-api.cdx.json`
@@ -18,9 +21,19 @@ const EXAMPLE_URL = `${import.meta.env.BASE_URL}examples/checkout-api.cdx.json`
 export async function fetchCheckoutExample(): Promise<CycloneDxBom> {
   const res = await fetch(EXAMPLE_URL)
   if (!res.ok) {
-    throw new Error(`Could not load ${EXAMPLE_URL} (${res.status})`)
+    throw new Error(
+      `Could not load the bundled sample at ${EXAMPLE_URL} (HTTP ${res.status}). Try Projects → Load examples/checkout-api.cdx.json after a refresh.`,
+    )
   }
-  return (await res.json()) as CycloneDxBom
+  let parsed: unknown
+  try {
+    parsed = await res.json()
+  } catch {
+    throw new Error(
+      `The bundled sample at ${EXAMPLE_URL} is not valid JSON. Rebuild or redeploy the app.`,
+    )
+  }
+  return parsed as CycloneDxBom
 }
 
 export function ExportView() {
@@ -33,27 +46,31 @@ export function ExportView() {
   const [copied, setCopied] = useState(false)
   const [forceSave, setForceSave] = useState(false)
 
-  const json = useMemo(
-    () => JSON.stringify(exportBom(), null, 2),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [bom.version, exportBom],
-  )
+  const json = useMemo(() => JSON.stringify(toExportBom(bom), null, 2), [bom])
 
-  const validation = useMemo(() => validateTmbom(exportBom()), [bom.version, exportBom])
+  const validation = useBomValidation()
 
   const copy = async () => {
-    await navigator.clipboard.writeText(json)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
+    try {
+      await navigator.clipboard.writeText(json)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      setError('Could not copy JSON to the clipboard. Select the preview below and copy manually.')
+    }
   }
 
   const onImportParsed = (parsed: unknown) => {
     setError(null)
-    const result = validateTmbom(parsed)
+    const checked = validateTmbom(parsed)
     importBom(parsed)
-    if (!result.ok) {
+    if (!checked.ok) {
       setStatus(
-        `Loaded with ${result.errors.length} validation error(s). Fix before relying on this file.`,
+        `Loaded with ${checked.errors.length} validation error(s). Open the list below and fix before relying on this file.`,
+      )
+    } else if (checked.warnings.length > 0) {
+      setStatus(
+        `Project loaded with ${checked.warnings.length} warning(s). Prefer committing the .cdx.json to Git.`,
       )
     } else {
       setStatus('Project loaded. Prefer committing the .cdx.json to Git.')
@@ -64,17 +81,16 @@ export function ExportView() {
     try {
       onImportParsed(await readProjectFromFile(file))
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to import BOM')
+      setError(describeIoError(e, 'import') || 'Failed to import BOM')
     }
   }
 
   const save = async () => {
     setError(null)
     const doc = exportBom()
-    const result = validateTmbom(doc)
-    if (!result.ok && !forceSave) {
+    if (!validation.ok && !forceSave) {
       setError(
-        `Validation failed (${result.errors.length} error(s)). Fix issues below or enable “Allow save with errors”.`,
+        `Validation failed (${validation.errors.length} error(s)). Fix issues below or enable “Allow save with errors”.`,
       )
       return
     }
@@ -87,8 +103,9 @@ export function ExportView() {
           : `Downloaded. Move the file into ${PROJECTS_FOLDER_HINT} and commit it.`,
       )
     } catch (e) {
-      if (e instanceof DOMException && e.name === 'AbortError') return
-      setError(e instanceof Error ? e.message : 'Save failed')
+      const msg = describeIoError(e, 'save')
+      if (!msg) return
+      setError(msg)
     }
   }
 
@@ -99,7 +116,9 @@ export function ExportView() {
       if (parsed) onImportParsed(parsed)
       else fileRef.current?.click()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Open failed')
+      const msg = describeIoError(e, 'open')
+      if (!msg) return
+      setError(msg)
     }
   }
 
@@ -109,7 +128,7 @@ export function ExportView() {
       onImportParsed(await fetchCheckoutExample())
       setStatus(`Loaded ${BUNDLED_EXAMPLES[0].path}`)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load example')
+      setError(describeIoError(e, 'load example') || 'Failed to load example')
     }
   }
 
@@ -166,9 +185,15 @@ export function ExportView() {
           />
           Allow save with validation errors
         </label>
-        {status && <p className="muted" style={{ marginBottom: 0 }}>{status}</p>}
+        {status && (
+          <p className="feedback feedback-ok" style={{ marginBottom: 0 }}>
+            {status}
+          </p>
+        )}
         {error && (
-          <p style={{ color: 'var(--danger)', marginBottom: 0 }}>{error}</p>
+          <p className="feedback feedback-error" role="alert" style={{ marginBottom: 0 }}>
+            {error}
+          </p>
         )}
       </div>
 
@@ -179,19 +204,20 @@ export function ExportView() {
         <p className="muted" style={{ marginTop: 0 }}>
           Structural checks for CycloneDX 2.0 TM-BOM shape (spec fields,
           blueprint, threats, risks). Full JSON Schema validation runs in CI.
+          The same status appears in the top bar while you edit.
         </p>
         {validation.ok && validation.warnings.length === 0 && (
-          <p style={{ color: 'var(--accent-ink)', marginBottom: 0 }}>
+          <p className="feedback feedback-ok" style={{ marginBottom: 0 }}>
             Document looks good to save.
           </p>
         )}
         {validation.ok && validation.warnings.length > 0 && (
-          <p style={{ color: 'var(--warn)', marginBottom: 0 }}>
+          <p className="feedback feedback-warn" style={{ marginBottom: 0 }}>
             No blocking errors · {validation.warnings.length} warning(s)
           </p>
         )}
         {!validation.ok && (
-          <p style={{ color: 'var(--danger)', marginBottom: 0 }}>
+          <p className="feedback feedback-error" style={{ marginBottom: 0 }}>
             {validation.errors.length} error(s) · {validation.warnings.length}{' '}
             warning(s)
           </p>
@@ -216,7 +242,7 @@ export function ExportView() {
 }
 
 /** Deep-link: ?example=checkout-api loads after zustand rehydration. */
-export function useExampleQueryBootstrap() {
+export function useExampleQueryBootstrap(onError?: (message: string) => void) {
   const importBom = useThreatModelStore((s) => s.importBom)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -228,8 +254,10 @@ export function useExampleQueryBootstrap() {
         .then((doc) => {
           if (!cancelled) importBom(doc)
         })
-        .catch(() => {
-          /* ignore bootstrap errors; user can load manually */
+        .catch((e) => {
+          if (cancelled) return
+          const msg = describeIoError(e, 'load example')
+          if (msg) onError?.(msg)
         })
     }
 
@@ -248,5 +276,5 @@ export function useExampleQueryBootstrap() {
       cancelled = true
       unsub()
     }
-  }, [importBom])
+  }, [importBom, onError])
 }
