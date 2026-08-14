@@ -103,10 +103,12 @@ Open the URL Vite prints (usually http://localhost:5173).
 | `npm run build` | Typecheck + production build |
 | `npm run build:pages` | Production build with GitHub Pages base path |
 | `npm run preview` | Preview production build |
+| `npm run lint` | Oxlint |
+| `npm run test` | Vitest unit tests |
 | `npm run generate:example` | Regenerate `examples/checkout-api.cdx.json` |
 | `npm run generate:capec` | Rebuild `src/data/capec-catalog.json` from vendored CAPEC 3.9 CSVs |
 | `npm run validate:example` | Structural + schema check of the sample TM-BOM |
-| `npm run ci` | `build` + `validate:example` |
+| `npm run ci` | `lint` + `test` + `build` + `validate:example` |
 
 ---
 
@@ -127,7 +129,8 @@ The UI catalog is generated into `src/data/capec-catalog.json` (`npm run generat
 
 ## CI & GitHub Pages
 
-- **CI** (`.github/workflows/ci.yml`) runs `npm run build` and `npm run validate:example` on pushes and pull requests.
+- **CI** (`.github/workflows/ci.yml`) runs `lint`, `test`, `build`, and `validate:example` on pushes and pull requests.
+- **Dependabot** (`.github/dependabot.yml`) opens weekly PRs for npm and GitHub Actions updates.
 - **Pages** (`.github/workflows/pages.yml`) builds with `npm run build:pages` and **auto-deploys to the `gh-pages` branch** on every push to `main`.
 
 One-time Pages setting (if the site is not live yet):

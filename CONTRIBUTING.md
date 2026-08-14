@@ -18,11 +18,13 @@ Open the URL Vite prints (usually http://localhost:5173).
 | Command | Purpose |
 | --- | --- |
 | `npm run dev` | Local app |
+| `npm run lint` | Oxlint |
+| `npm run test` | Vitest unit tests |
 | `npm run build` | Typecheck + production build |
 | `npm run build:pages` | Build with `/tmbom-studio/` base path (GitHub Pages) |
 | `npm run generate:example` | Regenerate `examples/checkout-api.cdx.json` (+ `public/examples/`) |
 | `npm run validate:example` | Structural checks on the sample TM-BOM |
-| `npm run ci` | `build` + `validate:example` (what GitHub Actions runs) |
+| `npm run ci` | `lint` + `test` + `build` + `validate:example` (what GitHub Actions runs) |
 
 After changing the sample model in `src/lib/sample.ts`, run:
 
