@@ -73,7 +73,7 @@ ThreatModeler targets the full [`2.0-dev-threatmodeling`](https://github.com/Cyc
 | `session` | Workshop participants + `.session.json` package export |
 | `links` | BOM-Link URNs and SBOM / VEX external references |
 | `advanced` | JSON editor for all other CycloneDX 2.0 root sections |
-| `report` | Printable / Save-as-PDF risk summary for reviews |
+| `report` | Printable / Save-as-PDF risk summary + Markdown export for reviews |
 | Persistence | Save/Open project files + recent drafts (+ `localStorage` cache) |
 | Validation | Structural checks in the UI before save; sample checked in CI |
 | Example | `examples/checkout-api.cdx.json` (also loadable in the UI) |
@@ -91,7 +91,17 @@ npm run dev
 
 Open the URL Vite prints (usually http://localhost:5173).
 
-**Persistence tip:** use **Projects → Save project file…** and commit under `projects/<system>.cdx.json` (see [projects/README.md](./projects/README.md)). Do not treat browser storage as the system of record.
+Or use the live app: [https://mehrn0ush.github.io/tmbom-studio/](https://mehrn0ush.github.io/tmbom-studio/)
+
+### First 5 minutes in the UI
+
+1. **Overview → Getting started** — name the system, create a zone, add an asset, suggest STRIDE threats, then open **Projects** to save.
+2. Or skip ahead: click **Sample model** (sidebar) / open [`/?example=checkout-api`](https://mehrn0ush.github.io/tmbom-studio/?example=checkout-api) to explore a full checkout API TM-BOM.
+3. **Blueprint** — drag assets, draw flows across trust zones.
+4. **Threats / Risks** — refine catalog entries and risk responses (link controls when ready).
+5. **Report** — Print/PDF or **Download .md** for stakeholders; **Projects** — save `*.cdx.json` and commit under `projects/` (see [projects/README.md](./projects/README.md)).
+
+**Persistence tip:** browser storage is only a draft cache. Prefer **Projects → Save project file…** as the system of record.
 
 ---
 

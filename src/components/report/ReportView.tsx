@@ -1,5 +1,10 @@
+import { useMemo, useState } from 'react'
 import { getPrimaryBlueprint } from '../../lib/bom'
 import { riskLevelColor } from '../../lib/catalog'
+import {
+  buildReportMarkdown,
+  suggestedReportFileName,
+} from '../../lib/reportMarkdown'
 import { useThreatModelStore } from '../../store/useThreatModelStore'
 
 export function ReportView() {
@@ -13,17 +18,58 @@ export function ReportView() {
     .map((m) => (typeof m === 'string' ? m : m.name))
     .join(', ')
 
+  const markdown = useMemo(() => buildReportMarkdown(bom), [bom])
+  const [copied, setCopied] = useState(false)
+  const [mdError, setMdError] = useState<string | null>(null)
+
+  const copyMarkdown = async () => {
+    setMdError(null)
+    try {
+      await navigator.clipboard.writeText(markdown)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      setMdError('Could not copy Markdown. Download the .md file instead.')
+    }
+  }
+
+  const downloadMarkdown = () => {
+    setMdError(null)
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = suggestedReportFileName(bom)
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="stack">
       <div className="panel panel-pad no-print btn-row">
         <p className="muted" style={{ margin: 0, flex: 1 }}>
-          Printable risk summary for design reviews. Use your browser print
-          dialog — choose “Save as PDF” if you need a PDF artifact.
+          Printable risk summary for design reviews. Export Markdown for
+          GitHub/Confluence, or use the browser print dialog (“Save as PDF”).
         </p>
-        <button className="btn btn-primary" type="button" onClick={() => window.print()}>
+        <button className="btn" type="button" onClick={() => void copyMarkdown()}>
+          {copied ? 'Copied' : 'Copy Markdown'}
+        </button>
+        <button className="btn" type="button" onClick={downloadMarkdown}>
+          Download .md
+        </button>
+        <button
+          className="btn btn-primary"
+          type="button"
+          onClick={() => window.print()}
+        >
           Print / Save as PDF
         </button>
       </div>
+      {mdError && (
+        <p className="feedback feedback-error no-print" role="alert">
+          {mdError}
+        </p>
+      )}
 
       <article className="panel panel-pad report-doc">
         <header className="report-header">

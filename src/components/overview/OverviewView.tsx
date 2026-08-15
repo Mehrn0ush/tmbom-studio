@@ -9,6 +9,7 @@ import {
   type RecentProject,
 } from '../../lib/recentProjects'
 import { fetchCheckoutExample } from '../export/ExportView'
+import { GettingStartedGuide } from './GettingStartedGuide'
 
 export function OverviewView() {
   const bom = useThreatModelStore((s) => s.bom)
@@ -47,6 +48,8 @@ export function OverviewView() {
 
   return (
     <div className="stack">
+      <GettingStartedGuide />
+
       <div className="panel hero-card">
         <h3>CycloneDX 2.0 Threat Model</h3>
         <p>
