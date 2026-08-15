@@ -9,6 +9,7 @@ import type {
   Component,
   Control,
   CycloneDxBom,
+  DataProfile,
   Requirement,
   ThreatProfile,
   TrustBoundary,
@@ -22,6 +23,7 @@ import {
   createBlueprintScope,
   createBusinessObjective,
   createControl,
+  createDataProfile,
   createRequirement,
   createThreatProfile,
   createTrustBoundary,
@@ -72,6 +74,13 @@ export interface SpecStoreSlice {
   addThreatProfile: (partial: Partial<ThreatProfile>) => string
   updateThreatProfile: (ref: string, patch: Partial<ThreatProfile>) => void
   removeThreatProfile: (ref: string) => void
+  addDataProfile: (partial: Partial<DataProfile> & { name: string }) => string
+  updateDataProfile: (ref: string, patch: Partial<DataProfile>) => void
+  removeDataProfile: (ref: string) => void
+  setDefinitionCatalog: (
+    key: 'standards' | 'patents',
+    items: Array<{ 'bom-ref': string; name: string; description?: string }>,
+  ) => void
   addComponent: (partial: Partial<Component> & { name: string }) => string
   updateComponent: (ref: string, patch: Partial<Component>) => void
   removeComponent: (ref: string) => void
@@ -454,6 +463,54 @@ export const createSpecStoreSlice: StateCreator<
         bom,
         selectedRef: s.selectedRef === ref ? null : s.selectedRef,
       }
+    }),
+
+  addDataProfile: (partial) => {
+    const profile = createDataProfile(partial)
+    set((s) => {
+      const bom = structuredClone(s.bom)
+      bom.profiles ??= {}
+      bom.profiles.dataProfiles = [
+        ...(bom.profiles.dataProfiles ?? []),
+        profile,
+      ]
+      bumpVersion(bom)
+      return { ...s, bom, selectedRef: profile['bom-ref'] }
+    })
+    return profile['bom-ref']
+  },
+  updateDataProfile: (ref, patch) =>
+    set((s) => {
+      const bom = structuredClone(s.bom)
+      if (!bom.profiles?.dataProfiles) return s
+      bom.profiles.dataProfiles = bom.profiles.dataProfiles.map((p) =>
+        p['bom-ref'] === ref ? { ...p, ...patch } : p,
+      )
+      bumpVersion(bom)
+      return { ...s, bom }
+    }),
+  removeDataProfile: (ref) =>
+    set((s) => {
+      const bom = structuredClone(s.bom)
+      if (!bom.profiles) return s
+      bom.profiles.dataProfiles = (bom.profiles.dataProfiles ?? []).filter(
+        (p) => p['bom-ref'] !== ref,
+      )
+      bumpVersion(bom)
+      return {
+        ...s,
+        bom,
+        selectedRef: s.selectedRef === ref ? null : s.selectedRef,
+      }
+    }),
+
+  setDefinitionCatalog: (key, items) =>
+    set((s) => {
+      const bom = structuredClone(s.bom)
+      bom.definitions ??= {}
+      bom.definitions[key] = items
+      bumpVersion(bom)
+      return { ...s, bom }
     }),
 
   addComponent: (partial) => {

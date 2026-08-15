@@ -373,6 +373,10 @@ export interface ThreatScenario {
   motivation?: string[]
   intent?: Intent
   accessLevel?: AccessLevel
+  attackVector?: {
+    type?: 'network' | 'adjacent' | 'local' | 'physical'
+    complexity?: 'low' | 'high'
+  }
   likelihood?: Likelihood
   impact?: Impact
   riskScore?: RiskScore

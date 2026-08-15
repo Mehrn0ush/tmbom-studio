@@ -22,6 +22,9 @@ export function RisksView() {
   const addRisk = useThreatModelStore((s) => s.addRisk)
   const updateRisk = useThreatModelStore((s) => s.updateRisk)
   const removeRisk = useThreatModelStore((s) => s.removeRisk)
+  const setRiskAssessmentsForScope = useThreatModelStore(
+    (s) => s.setRiskAssessmentsForScope,
+  )
 
   const risks = bom.risks?.risks ?? []
   const threats = bom.threats?.threats ?? []
@@ -165,6 +168,106 @@ export function RisksView() {
                   </option>
                 ))}
               </select>
+            </div>
+            <div className="field">
+              <label>Owner name</label>
+              <input
+                value={selected.owner?.name ?? ''}
+                onChange={(e) =>
+                  updateRisk(selected['bom-ref'], {
+                    owner: {
+                      ...selected.owner,
+                      name: e.target.value || undefined,
+                    },
+                  })
+                }
+                placeholder="Accountable party"
+              />
+            </div>
+            <div className="field">
+              <label>Target likelihood</label>
+              <select
+                value={selected.targetRisk?.likelihood?.level ?? ''}
+                onChange={(e) => {
+                  const level = e.target.value as LikelihoodLevel
+                  if (!level) {
+                    updateRisk(selected['bom-ref'], { targetRisk: undefined })
+                    return
+                  }
+                  const impact =
+                    selected.targetRisk?.impact?.level ?? 'moderate'
+                  updateRisk(selected['bom-ref'], {
+                    targetRisk: {
+                      ...selected.targetRisk,
+                      likelihood: { level },
+                      impact: { level: impact, polarity: 'harm' },
+                      score: {
+                        level: computeRiskLevel(level, impact),
+                        methodology: 'qualitative-matrix',
+                      },
+                    },
+                  })
+                }}
+              >
+                <option value="">—</option>
+                {LIKELIHOOD_LEVELS.map((l) => (
+                  <option key={l} value={l}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>Target impact</label>
+              <select
+                value={selected.targetRisk?.impact?.level ?? ''}
+                onChange={(e) => {
+                  const level = e.target.value as ImpactLevel
+                  if (!level) return
+                  const likelihood =
+                    selected.targetRisk?.likelihood?.level ?? 'low'
+                  updateRisk(selected['bom-ref'], {
+                    targetRisk: {
+                      ...selected.targetRisk,
+                      likelihood: { level: likelihood },
+                      impact: { level, polarity: 'harm' },
+                      score: {
+                        level: computeRiskLevel(likelihood, level),
+                        methodology: 'qualitative-matrix',
+                      },
+                    },
+                  })
+                }}
+              >
+                <option value="">—</option>
+                {IMPACT_LEVELS.map((l) => (
+                  <option key={l} value={l}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>Assessments (summary lines)</label>
+              <textarea
+                value={(bom.risks?.assessments ?? [])
+                  .filter((a) => a.scope === selected['bom-ref'])
+                  .map((a) => a.summary ?? a.name ?? '')
+                  .filter(Boolean)
+                  .join('\n')}
+                onChange={(e) => {
+                  const lines = e.target.value
+                    .split('\n')
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                  setRiskAssessmentsForScope(
+                    selected['bom-ref'],
+                    lines,
+                    selected.name,
+                  )
+                }}
+                placeholder="Workshop conclusion…"
+              />
             </div>
             <div className="field">
               <label>Related threats</label>

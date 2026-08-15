@@ -6,6 +6,7 @@ import {
   suggestedReportFileName,
 } from '../../lib/reportMarkdown'
 import { useThreatModelStore } from '../../store/useThreatModelStore'
+import { readThreatInScope } from '../../types/cyclonedx'
 
 export function ReportView() {
   const bom = useThreatModelStore((s) => s.bom)
@@ -18,9 +19,25 @@ export function ReportView() {
     .map((m) => (typeof m === 'string' ? m : m.name))
     .join(', ')
 
-  const markdown = useMemo(() => buildReportMarkdown(bom), [bom])
   const [copied, setCopied] = useState(false)
   const [mdError, setMdError] = useState<string | null>(null)
+  const [hideOutOfScope, setHideOutOfScope] = useState(false)
+
+  const markdown = useMemo(
+    () =>
+      buildReportMarkdown(bom, new Date(), {
+        separateOutOfScope: true,
+      }),
+    [bom],
+  )
+
+  const threatsVisible = hideOutOfScope
+    ? threats.filter((t) => readThreatInScope(t.properties) !== false)
+    : threats
+  const outOfScopeCount = threats.filter(
+    (t) => readThreatInScope(t.properties) === false,
+  ).length
+
 
   const copyMarkdown = async () => {
     setMdError(null)
@@ -50,7 +67,16 @@ export function ReportView() {
         <p className="muted" style={{ margin: 0, flex: 1 }}>
           Printable risk summary for design reviews. Export Markdown for
           GitHub/Confluence, or use the browser print dialog (“Save as PDF”).
+          Markdown separates out-of-scope threats (`cyclonedx:in-scope=false`).
         </p>
+        <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: '0.85rem' }}>
+          <input
+            type="checkbox"
+            checked={hideOutOfScope}
+            onChange={(e) => setHideOutOfScope(e.target.checked)}
+          />
+          Hide out-of-scope ({outOfScopeCount})
+        </label>
         <button className="btn" type="button" onClick={() => void copyMarkdown()}>
           {copied ? 'Copied' : 'Copy Markdown'}
         </button>
@@ -106,8 +132,11 @@ export function ReportView() {
               <tr>
                 <th>Catalog</th>
                 <td>
-                  {threats.length} threats · {scenarios.length} scenarios ·{' '}
-                  {risks.length} risks
+                  {threatsVisible.length} threats
+                  {hideOutOfScope && outOfScopeCount > 0
+                    ? ` (${outOfScopeCount} hidden)`
+                    : ''}{' '}
+                  · {scenarios.length} scenarios · {risks.length} risks
                 </td>
               </tr>
             </tbody>
@@ -146,7 +175,7 @@ export function ReportView() {
 
         <section>
           <h2>Threats</h2>
-          {threats.length === 0 ? (
+          {threatsVisible.length === 0 ? (
             <p className="muted">No threats documented.</p>
           ) : (
             <table className="table">
@@ -158,10 +187,15 @@ export function ReportView() {
                 </tr>
               </thead>
               <tbody>
-                {threats.map((t) => (
+                {threatsVisible.map((t) => (
                   <tr key={t['bom-ref']}>
                     <td>
-                      <strong>{t.name}</strong>
+                      <strong>
+                        {readThreatInScope(t.properties) === false
+                          ? '[out of scope] '
+                          : ''}
+                        {t.name}
+                      </strong>
                       {t.description ? (
                         <div className="muted" style={{ fontSize: '0.85rem' }}>
                           {t.description}

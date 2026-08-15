@@ -1,12 +1,14 @@
 import type { StateCreator } from 'zustand'
 import type {
   Asset,
+  Actor,
   Blueprint,
   Boundary,
   Flow,
   Zone,
 } from '../types/cyclonedx'
 import {
+  bomRef,
   createAsset,
   createBoundary,
   createFlow,
@@ -34,6 +36,9 @@ export interface BlueprintStoreSlice {
   ) => string
   updateFlow: (ref: string, patch: Partial<Flow>) => void
   removeFlow: (ref: string) => void
+  addActor: (partial: Partial<Actor> & { name: string }) => string
+  updateActor: (ref: string, patch: Partial<Actor>) => void
+  removeActor: (ref: string) => void
 }
 
 export const createBlueprintStoreSlice: StateCreator<
@@ -170,5 +175,43 @@ export const createBlueprintStoreSlice: StateCreator<
         bp.flows = (bp.flows ?? []).filter((f) => f['bom-ref'] !== ref)
       }),
       selectedRef: get().selectedRef === ref ? null : get().selectedRef,
+    })),
+
+  addActor: (partial) => {
+    const actor: Actor = {
+      'bom-ref': bomRef('actor'),
+      party: { name: partial.name },
+      description: partial.description,
+      zone: partial.zone,
+      properties: partial.properties,
+      _position: partial._position ?? { x: 80, y: 80 },
+    }
+    set((s) => ({
+      ...s,
+      bom: mutateBlueprint(s.bom, (bp) => {
+        bp.actors = [...(bp.actors ?? []), actor]
+      }),
+      selectedRef: actor['bom-ref'],
+    }))
+    return actor['bom-ref']
+  },
+
+  updateActor: (ref, patch) =>
+    set((s) => ({
+      ...s,
+      bom: mutateBlueprint(s.bom, (bp) => {
+        bp.actors = (bp.actors ?? []).map((a) =>
+          a['bom-ref'] === ref ? { ...a, ...patch } : a,
+        )
+      }),
+    })),
+
+  removeActor: (ref) =>
+    set((s) => ({
+      ...s,
+      bom: mutateBlueprint(s.bom, (bp) => {
+        bp.actors = (bp.actors ?? []).filter((a) => a['bom-ref'] !== ref)
+      }),
+      selectedRef: s.selectedRef === ref ? null : s.selectedRef,
     })),
 })

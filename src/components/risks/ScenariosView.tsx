@@ -160,6 +160,86 @@ export function ScenariosView() {
               </select>
             </div>
             <div className="field">
+              <label>Threat profile</label>
+              <select
+                value={selected.threatProfile ?? ''}
+                onChange={(e) =>
+                  updateScenario(selected['bom-ref'], {
+                    threatProfile: e.target.value || undefined,
+                  })
+                }
+              >
+                <option value="">—</option>
+                {(bom.profiles?.threatProfiles ?? []).map((p) => (
+                  <option key={p['bom-ref']} value={p['bom-ref']}>
+                    {p.name ?? p['bom-ref']}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>Motivation (one per line)</label>
+              <textarea
+                value={(selected.motivation ?? []).join('\n')}
+                onChange={(e) =>
+                  updateScenario(selected['bom-ref'], {
+                    motivation: e.target.value
+                      .split('\n')
+                      .map((s) => s.trim())
+                      .filter(Boolean),
+                  })
+                }
+                placeholder="financial gain&#10;espionage"
+              />
+            </div>
+            <div className="field">
+              <label>Attack vector type</label>
+              <select
+                value={selected.attackVector?.type ?? ''}
+                onChange={(e) =>
+                  updateScenario(selected['bom-ref'], {
+                    attackVector: {
+                      ...selected.attackVector,
+                      type: (e.target.value || undefined) as
+                        | 'network'
+                        | 'adjacent'
+                        | 'local'
+                        | 'physical'
+                        | undefined,
+                    },
+                  })
+                }
+              >
+                <option value="">—</option>
+                {['network', 'adjacent', 'local', 'physical'].map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>Attack vector complexity</label>
+              <select
+                value={selected.attackVector?.complexity ?? ''}
+                onChange={(e) =>
+                  updateScenario(selected['bom-ref'], {
+                    attackVector: {
+                      ...selected.attackVector,
+                      complexity: (e.target.value || undefined) as
+                        | 'low'
+                        | 'high'
+                        | undefined,
+                    },
+                  })
+                }
+              >
+                <option value="">—</option>
+                <option value="low">low</option>
+                <option value="high">high</option>
+              </select>
+            </div>
+            <div className="field">
               <label>Intent</label>
               <select
                 value={selected.intent ?? 'targeted'}

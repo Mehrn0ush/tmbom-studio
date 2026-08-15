@@ -3,6 +3,12 @@ import { useThreatModelStore } from '../../store/useThreatModelStore'
 import {
   CAPEC_META,
   filterCapecCatalog,
+  getCapecChildren,
+  getCapecEntry,
+  getCapecHierarchyRoots,
+  getCapecParents,
+  getCapecRelated,
+  type CapecCatalogEntry,
   type CapecCatalogView,
 } from '../../lib/capecCatalog'
 
@@ -23,9 +29,11 @@ export function AttackPatternsView() {
   const [capecPick, setCapecPick] = useState('')
   const [customName, setCustomName] = useState('')
   const [customCapec, setCustomCapec] = useState('')
+  const [browseId, setBrowseId] = useState<number | null>(null)
+  const [expanded, setExpanded] = useState<Set<number>>(() => new Set())
 
   const filtered = useMemo(
-    () => filterCapecCatalog(view, query),
+    () => filterCapecCatalog(view === 'hierarchy' ? 'all' : view, query),
     [view, query],
   )
 
@@ -36,6 +44,27 @@ export function AttackPatternsView() {
     t.attackPatterns?.includes(selected?.['bom-ref'] ?? ''),
   )
 
+  const roots = useMemo(() => getCapecHierarchyRoots(), [])
+  const browsing = browseId != null ? getCapecEntry(browseId) : null
+
+  const toggleExpand = (id: number) => {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const addFromCatalog = (entry: CapecCatalogEntry) => {
+    addAttackPattern({
+      name: entry.name,
+      description: entry.description,
+      capecId: entry.capecId,
+      techniques: entry.techniques,
+    })
+  }
+
   return (
     <div className="split">
       <div className="stack">
@@ -45,17 +74,11 @@ export function AttackPatternsView() {
           </h3>
           <p className="muted" style={{ margin: 0 }}>
             Catalog from{' '}
-            <a
-              href={CAPEC_META.source}
-              target="_blank"
-              rel="noreferrer"
-            >
+            <a href={CAPEC_META.source} target="_blank" rel="noreferrer">
               CAPEC List {CAPEC_META.version}
             </a>{' '}
-            ({CAPEC_META.count} patterns). Default view is OWASP Related
-            Patterns (View 659, {CAPEC_META.owaspRelatedCount} entries). Full
-            dictionary is View 2000; Mechanisms (1000) / Domains (3000) CSVs are
-            vendored under <span className="mono">data/capec/</span>.
+            ({CAPEC_META.count} patterns). Hierarchy uses Related Attack Patterns
+            (ChildOf) shared by Views 1000 / 3000 / 2000 in CAPEC 3.9 CSVs.
           </p>
           <div className="btn-row" style={{ alignItems: 'end' }}>
             <div className="field">
@@ -67,99 +90,149 @@ export function AttackPatternsView() {
                   setCapecPick('')
                 }}
               >
-                <option value="owasp">
-                  OWASP Related (View 659)
-                </option>
-                <option value="all">
-                  Full dictionary (View 2000)
+                <option value="owasp">OWASP Related (View 659)</option>
+                <option value="all">Full dictionary (View 2000)</option>
+                <option value="hierarchy">
+                  Hierarchy browser (1000 / 3000)
                 </option>
               </select>
             </div>
-            <div className="field" style={{ flex: 1 }}>
-              <label>Search</label>
-              <input
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value)
-                  setCapecPick('')
-                }}
-                placeholder="ID, name, or description"
-              />
-            </div>
+            {view !== 'hierarchy' && (
+              <div className="field" style={{ flex: 1 }}>
+                <label>Search</label>
+                <input
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value)
+                    setCapecPick('')
+                  }}
+                  placeholder="ID, name, or description"
+                />
+              </div>
+            )}
           </div>
-          <div className="btn-row" style={{ alignItems: 'end' }}>
-            <div className="field" style={{ flex: 1 }}>
-              <label>
-                Add from catalog ({filtered.length} shown)
-              </label>
-              <select
-                value={pick ? String(pick.capecId) : ''}
-                onChange={(e) => setCapecPick(e.target.value)}
-                disabled={filtered.length === 0}
-              >
-                {filtered.length === 0 && (
-                  <option value="">No matches</option>
-                )}
-                {filtered.map((c) => (
-                  <option key={c.capecId} value={c.capecId}>
-                    CAPEC-{c.capecId} — {c.name}
-                    {c.owaspRelated ? ' · OWASP' : ''}
-                  </option>
+
+          {view === 'hierarchy' ? (
+            <div className="stack">
+              <p className="muted" style={{ margin: 0, fontSize: '0.85rem' }}>
+                Expand Meta/Category roots, then add a pattern to the model.
+              </p>
+              <div className="capec-tree">
+                {roots.map((r) => (
+                  <CapecTreeNode
+                    key={r.capecId}
+                    entry={r}
+                    depth={0}
+                    expanded={expanded}
+                    onToggle={toggleExpand}
+                    onBrowse={setBrowseId}
+                    onAdd={addFromCatalog}
+                    activeId={browseId}
+                  />
                 ))}
-              </select>
+              </div>
+              {browsing && (
+                <div className="panel panel-pad stack" style={{ marginTop: 8 }}>
+                  <strong>
+                    CAPEC-{browsing.capecId}: {browsing.name}
+                  </strong>
+                  <p className="muted" style={{ margin: 0 }}>
+                    {browsing.description}
+                  </p>
+                  <p className="mono muted" style={{ margin: 0 }}>
+                    {browsing.abstraction || '—'} · severity{' '}
+                    {browsing.severity || '—'}
+                  </p>
+                  <div className="muted" style={{ fontSize: '0.85rem' }}>
+                    Parents:{' '}
+                    {getCapecParents(browsing.capecId)
+                      .map((p) => `CAPEC-${p.capecId}`)
+                      .join(', ') || '—'}
+                  </div>
+                  <div className="muted" style={{ fontSize: '0.85rem' }}>
+                    Related:{' '}
+                    {getCapecRelated(browsing.capecId)
+                      .map((e) => `${e.nature}→${e.capecId}`)
+                      .join(', ') || '—'}
+                  </div>
+                  <button
+                    className="btn btn-primary"
+                    type="button"
+                    onClick={() => addFromCatalog(browsing)}
+                  >
+                    Add CAPEC-{browsing.capecId}
+                  </button>
+                </div>
+              )}
             </div>
-            <button
-              className="btn btn-primary"
-              type="button"
-              disabled={!pick}
-              onClick={() => {
-                if (!pick) return
-                addAttackPattern({
-                  name: pick.name,
-                  description: pick.description,
-                  capecId: pick.capecId,
-                  techniques: pick.techniques,
-                })
-              }}
-            >
-              Add CAPEC
-            </button>
-          </div>
-          <div className="btn-row" style={{ alignItems: 'end' }}>
-            <div className="field" style={{ flex: 1 }}>
-              <label>Custom pattern name</label>
-              <input
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-                placeholder="Pattern name"
-              />
-            </div>
-            <div className="field">
-              <label>CAPEC ID</label>
-              <input
-                value={customCapec}
-                onChange={(e) => setCustomCapec(e.target.value)}
-                placeholder="e.g. 242"
-                inputMode="numeric"
-              />
-            </div>
-            <button
-              className="btn"
-              type="button"
-              onClick={() => {
-                if (!customName.trim()) return
-                const id = Number(customCapec)
-                addAttackPattern({
-                  name: customName.trim(),
-                  capecId: Number.isFinite(id) && id >= 1 ? id : undefined,
-                })
-                setCustomName('')
-                setCustomCapec('')
-              }}
-            >
-              Add custom
-            </button>
-          </div>
+          ) : (
+            <>
+              <div className="btn-row" style={{ alignItems: 'end' }}>
+                <div className="field" style={{ flex: 1 }}>
+                  <label>Add from catalog ({filtered.length} shown)</label>
+                  <select
+                    value={pick ? String(pick.capecId) : ''}
+                    onChange={(e) => setCapecPick(e.target.value)}
+                    disabled={filtered.length === 0}
+                  >
+                    {filtered.length === 0 && (
+                      <option value="">No matches</option>
+                    )}
+                    {filtered.map((c) => (
+                      <option key={c.capecId} value={c.capecId}>
+                        CAPEC-{c.capecId} — {c.name}
+                        {c.owaspRelated ? ' · OWASP' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  className="btn btn-primary"
+                  type="button"
+                  disabled={!pick}
+                  onClick={() => pick && addFromCatalog(pick)}
+                >
+                  Add CAPEC
+                </button>
+              </div>
+              <div className="btn-row" style={{ alignItems: 'end' }}>
+                <div className="field" style={{ flex: 1 }}>
+                  <label>Custom pattern name</label>
+                  <input
+                    value={customName}
+                    onChange={(e) => setCustomName(e.target.value)}
+                    placeholder="Pattern name"
+                  />
+                </div>
+                <div className="field">
+                  <label>CAPEC ID</label>
+                  <input
+                    value={customCapec}
+                    onChange={(e) => setCustomCapec(e.target.value)}
+                    placeholder="e.g. 242"
+                    inputMode="numeric"
+                  />
+                </div>
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => {
+                    if (!customName.trim()) return
+                    const id = Number(customCapec)
+                    addAttackPattern({
+                      name: customName.trim(),
+                      capecId:
+                        Number.isFinite(id) && id >= 1 ? id : undefined,
+                    })
+                    setCustomName('')
+                    setCustomCapec('')
+                  }}
+                >
+                  Add custom
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="list">
@@ -259,6 +332,25 @@ export function AttackPatternsView() {
                 placeholder={'T1078|Valid Accounts|initial-access'}
               />
             </div>
+            {selected.capecId != null && (
+              <div className="stack" style={{ gap: 4 }}>
+                <strong>Hierarchy</strong>
+                <p className="muted" style={{ margin: 0, fontSize: '0.85rem' }}>
+                  Parents:{' '}
+                  {getCapecParents(selected.capecId)
+                    .map((p) => `CAPEC-${p.capecId}`)
+                    .join(', ') || '—'}
+                </p>
+                <p className="muted" style={{ margin: 0, fontSize: '0.85rem' }}>
+                  Children:{' '}
+                  {getCapecChildren(selected.capecId)
+                    .slice(0, 12)
+                    .map((c) => `CAPEC-${c.capecId}`)
+                    .join(', ') || '—'}
+                  {getCapecChildren(selected.capecId).length > 12 ? '…' : ''}
+                </p>
+              </div>
+            )}
             <div>
               <strong>Linked threats</strong>
               <p className="muted" style={{ marginTop: 4 }}>
@@ -290,6 +382,76 @@ export function AttackPatternsView() {
           </div>
         )}
       </aside>
+    </div>
+  )
+}
+
+function CapecTreeNode({
+  entry,
+  depth,
+  expanded,
+  onToggle,
+  onBrowse,
+  onAdd,
+  activeId,
+}: {
+  entry: CapecCatalogEntry
+  depth: number
+  expanded: Set<number>
+  onToggle: (id: number) => void
+  onBrowse: (id: number) => void
+  onAdd: (e: CapecCatalogEntry) => void
+  activeId: number | null
+}) {
+  const children = getCapecChildren(entry.capecId)
+  const open = expanded.has(entry.capecId)
+  return (
+    <div style={{ marginLeft: depth * 12 }}>
+      <div className="capec-tree-row">
+        {children.length > 0 ? (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            style={{ padding: '0.15rem 0.4rem', minWidth: '1.75rem' }}
+            onClick={() => onToggle(entry.capecId)}
+            aria-expanded={open}
+          >
+            {open ? '−' : '+'}
+          </button>
+        ) : (
+          <span style={{ width: '1.75rem', display: 'inline-block' }} />
+        )}
+        <button
+          type="button"
+          className={`btn${activeId === entry.capecId ? ' btn-primary' : ''}`}
+          style={{ flex: 1, textAlign: 'left', fontSize: '0.82rem' }}
+          onClick={() => onBrowse(entry.capecId)}
+        >
+          CAPEC-{entry.capecId} · {entry.name}
+          {entry.abstraction ? ` (${entry.abstraction})` : ''}
+        </button>
+        <button
+          type="button"
+          className="btn"
+          style={{ fontSize: '0.75rem' }}
+          onClick={() => onAdd(entry)}
+        >
+          Add
+        </button>
+      </div>
+      {open &&
+        children.map((c) => (
+          <CapecTreeNode
+            key={c.capecId}
+            entry={c}
+            depth={depth + 1}
+            expanded={expanded}
+            onToggle={onToggle}
+            onBrowse={onBrowse}
+            onAdd={onAdd}
+            activeId={activeId}
+          />
+        ))}
     </div>
   )
 }

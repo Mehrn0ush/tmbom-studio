@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useState } from 'react'
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react'
 import { useThreatModelStore } from './store/useThreatModelStore'
 import type { WorkspaceView } from './types/cyclonedx'
 import { OverviewView } from './components/overview/OverviewView'
@@ -33,27 +33,74 @@ const AttackPatternsView = lazy(() =>
   })),
 )
 
-const NAV: Array<{ id: WorkspaceView; label: string }> = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'blueprint', label: 'Blueprint' },
-  { id: 'assumptions', label: 'Scope & assumptions' },
-  { id: 'threats', label: 'Threats' },
-  { id: 'attack-patterns', label: 'CAPEC' },
-  { id: 'attack-trees', label: 'Attack trees' },
-  { id: 'attack-paths', label: 'Attack paths' },
-  { id: 'abuse-cases', label: 'Abuse cases' },
-  { id: 'trust-boundaries', label: 'Trust boundaries' },
-  { id: 'controls', label: 'Controls' },
-  { id: 'definitions', label: 'Definitions' },
-  { id: 'profiles', label: 'Profiles' },
-  { id: 'scenarios', label: 'Scenarios' },
-  { id: 'risks', label: 'Risks' },
-  { id: 'components', label: 'Components' },
-  { id: 'session', label: 'Session' },
-  { id: 'links', label: 'Links' },
-  { id: 'advanced', label: 'Advanced BOM' },
-  { id: 'report', label: 'Report' },
-  { id: 'export', label: 'Projects' },
+type NavItem = { id: WorkspaceView; label: string }
+type NavGroup = {
+  id: string
+  label: string
+  /** Collapsed by default for workshop-friendly IA */
+  defaultCollapsed?: boolean
+  items: NavItem[]
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    id: 'model',
+    label: 'Model',
+    items: [
+      { id: 'overview', label: 'Overview' },
+      { id: 'blueprint', label: 'Blueprint' },
+      { id: 'assumptions', label: 'Scope & assumptions' },
+    ],
+  },
+  {
+    id: 'threats',
+    label: 'Threat analysis',
+    items: [
+      { id: 'threats', label: 'Threats' },
+      { id: 'attack-patterns', label: 'CAPEC' },
+      { id: 'attack-trees', label: 'Attack trees' },
+      { id: 'attack-paths', label: 'Attack paths' },
+      { id: 'abuse-cases', label: 'Abuse cases' },
+    ],
+  },
+  {
+    id: 'risk',
+    label: 'Risk & controls',
+    items: [
+      { id: 'scenarios', label: 'Scenarios' },
+      { id: 'risks', label: 'Risks' },
+      { id: 'controls', label: 'Controls' },
+      { id: 'trust-boundaries', label: 'Trust boundaries' },
+    ],
+  },
+  {
+    id: 'catalogs',
+    label: 'Catalogs',
+    defaultCollapsed: true,
+    items: [
+      { id: 'definitions', label: 'Definitions' },
+      { id: 'profiles', label: 'Profiles' },
+      { id: 'components', label: 'Components' },
+    ],
+  },
+  {
+    id: 'workshop',
+    label: 'Workshop & advanced',
+    defaultCollapsed: true,
+    items: [
+      { id: 'session', label: 'Session' },
+      { id: 'links', label: 'Links' },
+      { id: 'advanced', label: 'Advanced BOM' },
+    ],
+  },
+  {
+    id: 'output',
+    label: 'Output',
+    items: [
+      { id: 'report', label: 'Report' },
+      { id: 'export', label: 'Projects' },
+    ],
+  },
 ]
 
 const TITLES: Record<WorkspaceView, string> = {
@@ -79,6 +126,10 @@ const TITLES: Record<WorkspaceView, string> = {
   export: 'Projects / Export',
 }
 
+function groupContainsView(group: NavGroup, view: WorkspaceView): boolean {
+  return group.items.some((i) => i.id === view)
+}
+
 export default function App() {
   const [bootstrapError, setBootstrapError] = useState<string | null>(null)
   const onBootstrapError = useCallback((message: string) => {
@@ -93,6 +144,29 @@ export default function App() {
   const newModel = useThreatModelStore((s) => s.newModel)
   const validation = useBomValidation()
 
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {}
+    for (const g of NAV_GROUPS) {
+      if (g.defaultCollapsed) init[g.id] = true
+    }
+    return init
+  })
+
+  const openGroups = useMemo(() => {
+    const next = { ...collapsed }
+    for (const g of NAV_GROUPS) {
+      if (groupContainsView(g, view)) next[g.id] = false
+    }
+    return next
+  }, [collapsed, view])
+
+  const toggleGroup = (id: string) => {
+    setCollapsed((prev) => ({
+      ...prev,
+      [id]: !(openGroups[id] ?? false),
+    }))
+  }
+
   const systemName = bom.metadata?.component?.name ?? 'Untitled'
   const bp = getPrimaryBlueprint(bom)
 
@@ -106,16 +180,35 @@ export default function App() {
         </div>
 
         <nav className="nav" aria-label="Primary">
-          {NAV.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={view === item.id ? 'active' : ''}
-              onClick={() => setView(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
+          {NAV_GROUPS.map((group) => {
+            const isCollapsed = openGroups[group.id] ?? false
+            return (
+              <div key={group.id} className="nav-group">
+                <button
+                  type="button"
+                  className="nav-group-toggle"
+                  aria-expanded={!isCollapsed}
+                  onClick={() => toggleGroup(group.id)}
+                >
+                  <span>{group.label}</span>
+                  <span className="nav-group-chevron" aria-hidden>
+                    {isCollapsed ? '+' : '−'}
+                  </span>
+                </button>
+                {!isCollapsed &&
+                  group.items.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={view === item.id ? 'active' : ''}
+                      onClick={() => setView(item.id)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+              </div>
+            )
+          })}
         </nav>
 
         <div className="sidebar-actions">

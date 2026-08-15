@@ -11,6 +11,8 @@ import {
   readThreatInScope,
   writeThreatInScope,
 } from '../../types/cyclonedx'
+import { CrossLinks, useThreatCrossLinks } from '../shared/CrossLinks'
+import { bomRef } from '../../lib/bom'
 
 function categoriesFor(taxonomy: ThreatTaxonomy) {
   if (taxonomy === 'LINDDUN') return LINDDUN_CATEGORIES
@@ -315,6 +317,55 @@ export function ThreatsView() {
             </select>
           </div>
           <div className="field">
+            <label>Kill chain phase</label>
+            <input
+              value={selected.killChainPhase ?? ''}
+              onChange={(e) =>
+                updateThreat(selected['bom-ref'], {
+                  killChainPhase: e.target.value || undefined,
+                })
+              }
+              placeholder="e.g. exploitation, installation, C2"
+            />
+          </div>
+          <div className="field">
+            <label>Weaknesses / CWE (one per line: optionalId|name)</label>
+            <textarea
+              value={(selected.weaknesses ?? [])
+                .map((w) =>
+                  w.cweId != null
+                    ? `${w.cweId}|${w.name ?? ''}`
+                    : (w.name ?? ''),
+                )
+                .join('\n')}
+              onChange={(e) => {
+                const weaknesses = e.target.value
+                  .split('\n')
+                  .map((line) => line.trim())
+                  .filter(Boolean)
+                  .map((line) => {
+                    const [a, b] = line.split('|').map((s) => s.trim())
+                    const idNum = Number(a)
+                    if (b !== undefined && Number.isFinite(idNum)) {
+                      return {
+                        'bom-ref': bomRef('weakness'),
+                        cweId: idNum,
+                        name: b || `CWE-${idNum}`,
+                      }
+                    }
+                    return {
+                      'bom-ref': bomRef('weakness'),
+                      name: a,
+                    }
+                  })
+                updateThreat(selected['bom-ref'], {
+                  weaknesses: weaknesses.length ? weaknesses : undefined,
+                })
+              }}
+              placeholder={'79|XSS\n89|SQL Injection'}
+            />
+          </div>
+          <div className="field">
             <label>Affected assets</label>
             <select
               multiple
@@ -395,6 +446,10 @@ export function ThreatsView() {
               ))}
             </select>
           </div>
+          <div className="field">
+            <label>Cross-links</label>
+            <ThreatCrossLinksPanel threatRef={selected['bom-ref']} />
+          </div>
           <p className="mono muted">{selected['bom-ref']}</p>
           <button
             className="btn btn-danger"
@@ -407,4 +462,9 @@ export function ThreatsView() {
       )}
     </div>
   )
+}
+
+function ThreatCrossLinksPanel({ threatRef }: { threatRef: string }) {
+  const links = useThreatCrossLinks(threatRef)
+  return <CrossLinks links={links} />
 }

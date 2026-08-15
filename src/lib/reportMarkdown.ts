@@ -1,5 +1,7 @@
-import type { CycloneDxBom, Risk } from '../types/cyclonedx'
+import type { CycloneDxBom, Risk, Threat } from '../types/cyclonedx'
+import { readThreatInScope } from '../types/cyclonedx'
 import { getPrimaryBlueprint } from './bom'
+import { partitionThreatsByScope } from './inScopeFilter'
 
 function esc(text: string | undefined | null): string {
   return (text ?? '').replace(/\r\n/g, '\n').trim()
@@ -10,10 +12,39 @@ function levelOf(risk: Risk, kind: 'inherent' | 'residual'): string {
   return rating?.score?.level ?? rating?.likelihood?.level ?? '—'
 }
 
+export type ReportMarkdownOptions = {
+  /** Split threats with cyclonedx:in-scope=false into a separate section. */
+  separateOutOfScope?: boolean
+}
+
+function writeThreatSection(lines: string[], threats: Threat[], heading: string) {
+  lines.push(`## ${heading}`, '')
+  if (threats.length === 0) {
+    lines.push('_No threats documented._', '')
+    return
+  }
+  for (const t of threats) {
+    const cats = (t.categories ?? [])
+      .map((c) => `${c.taxonomy}:${c.category}`)
+      .join(', ')
+    const oos = readThreatInScope(t.properties) === false
+    lines.push(`### ${oos ? '[out of scope] ' : ''}${esc(t.name)}`, '')
+    if (t.description) lines.push(esc(t.description), '')
+    if (cats) lines.push(`- **Taxonomy:** ${cats}`)
+    if (t.affectedAssets?.length) {
+      lines.push(
+        `- **Affected assets:** ${t.affectedAssets.map((r) => `\`${r}\``).join(', ')}`,
+      )
+    }
+    lines.push('')
+  }
+}
+
 /** Stakeholder-friendly Markdown summary derived from a TM-BOM. */
 export function buildReportMarkdown(
   bom: CycloneDxBom,
   generatedAt = new Date(),
+  options: ReportMarkdownOptions = {},
 ): string {
   const bp = getPrimaryBlueprint(bom)
   const name = bom.metadata?.component?.name ?? 'Untitled System'
@@ -69,24 +100,18 @@ export function buildReportMarkdown(
     lines.push('')
   }
 
-  lines.push('## Threats', '')
-  if (threats.length === 0) {
-    lines.push('_No threats documented._', '')
-  } else {
-    for (const t of threats) {
-      const cats = (t.categories ?? [])
-        .map((c) => `${c.taxonomy}:${c.category}`)
-        .join(', ')
-      lines.push(`### ${esc(t.name)}`, '')
-      if (t.description) lines.push(esc(t.description), '')
-      if (cats) lines.push(`- **Taxonomy:** ${cats}`)
-      if (t.affectedAssets?.length) {
-        lines.push(
-          `- **Affected assets:** ${t.affectedAssets.map((r) => `\`${r}\``).join(', ')}`,
-        )
-      }
-      lines.push('')
+  if (options.separateOutOfScope) {
+    const { inScope, outOfScope } = partitionThreatsByScope(bom)
+    writeThreatSection(lines, inScope, 'Threats (in scope)')
+    if (outOfScope.length > 0) {
+      writeThreatSection(lines, outOfScope, 'Out-of-scope threats')
+      lines.push(
+        '_Marked via property `cyclonedx:in-scope=false` (convention; not a normative TM-BOM field)._',
+        '',
+      )
     }
+  } else {
+    writeThreatSection(lines, threats, 'Threats')
   }
 
   lines.push('## Risk register', '')

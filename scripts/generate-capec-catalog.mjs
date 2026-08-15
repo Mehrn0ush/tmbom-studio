@@ -110,16 +110,34 @@ function shortDescription(desc, max = 360) {
   return `${cleaned.slice(0, max - 1).trimEnd()}…`
 }
 
+/** Parse CAPEC “Related Attack Patterns” field into edge list. */
+function parseRelated(raw) {
+  if (!raw) return []
+  const edges = []
+  const re = /NATURE:([^:]+):CAPEC ID:(\d+)/g
+  let m
+  while ((m = re.exec(raw)) !== null) {
+    const nature = m[1].trim()
+    const capecId = Number(m[2])
+    if (!nature || !Number.isFinite(capecId)) continue
+    edges.push({ nature, capecId })
+  }
+  return edges
+}
+
 const full = await loadCsv('data/capec/2000/2000.csv')
 const owaspIds = new Set(
   (await loadCsv('data/capec/659/659.csv')).map(rowId).filter(Number.isFinite),
 )
 
+const relatedById = {}
 const patterns = full
   .map((row) => {
     const capecId = rowId(row)
     if (!Number.isFinite(capecId)) return null
     const techniques = parseAttackTechniques(row['Taxonomy Mappings'] || '')
+    const related = parseRelated(row['Related Attack Patterns'] || '')
+    if (related.length) relatedById[String(capecId)] = related
     const entry = {
       capecId,
       name: row.Name || `CAPEC-${capecId}`,
@@ -159,4 +177,22 @@ const outFile = path.join(outDir, 'capec-catalog.json')
 await writeFile(outFile, JSON.stringify(payload), 'utf8')
 console.log(
   `Wrote ${path.relative(root, outFile)} (${patterns.length} patterns, ${payload.meta.owaspRelatedCount} OWASP-related)`,
+)
+
+// Compact hierarchy edges for Views 1000/3000-style browsing (Related Attack Patterns).
+// CAPEC 3.9 CSV rows for 1000/3000 match 2000 for this column.
+const hierarchy = {
+  meta: {
+    version: '3.9',
+    source: 'https://capec.mitre.org/data/downloads.html',
+    note: 'ChildOf edges from Related Attack Patterns (Views 1000/3000/2000 share this graph in CAPEC 3.9 CSVs).',
+    generatedFrom: 'data/capec/2000/2000.csv',
+    nodeCount: Object.keys(relatedById).length,
+  },
+  related: relatedById,
+}
+const hierarchyFile = path.join(outDir, 'capec-hierarchy.json')
+await writeFile(hierarchyFile, JSON.stringify(hierarchy), 'utf8')
+console.log(
+  `Wrote ${path.relative(root, hierarchyFile)} (${hierarchy.meta.nodeCount} nodes with related edges)`,
 )

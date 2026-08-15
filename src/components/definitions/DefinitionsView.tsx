@@ -7,7 +7,7 @@ import type {
   UseCaseDefinition,
 } from '../../types/cyclonedx'
 
-type DefTab = 'requirements' | 'objectives' | 'useCases'
+type DefTab = 'requirements' | 'objectives' | 'useCases' | 'standards' | 'patents'
 
 export function DefinitionsView() {
   const [tab, setTab] = useState<DefTab>('requirements')
@@ -32,10 +32,21 @@ export function DefinitionsView() {
   const removeUseCaseDefinition = useThreatModelStore(
     (s) => s.removeUseCaseDefinition,
   )
+  const setDefinitionCatalog = useThreatModelStore((s) => s.setDefinitionCatalog)
 
   const requirements = bom.definitions?.requirements ?? []
   const objectives = bom.definitions?.businessObjectives ?? []
   const useCases = bom.definitions?.useCases ?? []
+  const standards = (bom.definitions?.standards ?? []) as Array<{
+    'bom-ref'?: string
+    name?: string
+    description?: string
+  }>
+  const patents = (bom.definitions?.patents ?? []) as Array<{
+    'bom-ref'?: string
+    name?: string
+    description?: string
+  }>
 
   return (
     <div className="stack">
@@ -45,6 +56,8 @@ export function DefinitionsView() {
             ['requirements', 'Requirements'],
             ['objectives', 'Business objectives'],
             ['useCases', 'Use cases'],
+            ['standards', 'Standards'],
+            ['patents', 'Patents'],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -188,6 +201,41 @@ export function DefinitionsView() {
             </>
           )}
         />
+      )}
+
+      {(tab === 'standards' || tab === 'patents') && (
+        <div className="panel panel-pad stack">
+          <h3 style={{ margin: 0, fontFamily: 'var(--font-display)' }}>
+            {tab === 'standards' ? 'Standards' : 'Patents'}
+          </h3>
+          <p className="muted" style={{ margin: 0 }}>
+            definitions.{tab}[] — one entry per line as{' '}
+            <span className="mono">name|description</span>.
+          </p>
+          <textarea
+            rows={12}
+            value={(tab === 'standards' ? standards : patents)
+              .map((s) =>
+                s.description ? `${s.name ?? ''}|${s.description}` : (s.name ?? ''),
+              )
+              .join('\n')}
+            onChange={(e) => {
+              const items = e.target.value
+                .split('\n')
+                .map((line) => line.trim())
+                .filter(Boolean)
+                .map((line, i) => {
+                  const [name, description] = line.split('|').map((s) => s.trim())
+                  return {
+                    'bom-ref': `${tab}-${i + 1}`,
+                    name: name || `${tab}-${i + 1}`,
+                    description: description || undefined,
+                  }
+                })
+              setDefinitionCatalog(tab, items)
+            }}
+          />
+        </div>
       )}
     </div>
   )

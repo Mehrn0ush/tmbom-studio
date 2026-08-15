@@ -7,6 +7,7 @@ import type {
   BusinessObjective,
   Control,
   Requirement,
+  DataProfile,
   ThreatProfile,
   TrustBoundary,
   UseCaseDefinition,
@@ -75,4 +76,10 @@ export function createThreatProfile(
   partial: Partial<ThreatProfile> & { name?: string },
 ): ThreatProfile {
   return { 'bom-ref': bomRef('threat-profile'), ...partial }
+}
+
+export function createDataProfile(
+  partial: Partial<DataProfile> & { name: string },
+): DataProfile {
+  return { 'bom-ref': bomRef('data-profile'), ...partial }
 }

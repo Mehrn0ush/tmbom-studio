@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { emptyBom, createAsset, createThreat, createRisk } from './bom'
 import { getPrimaryBlueprint } from './bom'
 import { buildReportMarkdown, suggestedReportFileName } from './reportMarkdown'
+import { writeThreatInScope } from '../types/cyclonedx'
 
 describe('buildReportMarkdown', () => {
   it('includes system name and empty sections', () => {
@@ -51,6 +52,19 @@ describe('buildReportMarkdown', () => {
     expect(md).toContain('| Fraud |')
     expect(md).toContain('reduce: mTLS')
     expect(md).toContain('| mTLS | preventive | implemented |')
+  })
+
+  it('separates out-of-scope threats when requested', () => {
+    const bom = emptyBom('Lib')
+    const inScope = createThreat({ name: 'In scope threat' })
+    const out = createThreat({ name: 'Library-only threat' })
+    out.properties = writeThreatInScope(out.properties, false)
+    bom.threats!.threats = [inScope, out]
+    const md = buildReportMarkdown(bom, new Date(), { separateOutOfScope: true })
+    expect(md).toContain('## Threats (in scope)')
+    expect(md).toContain('## Out-of-scope threats')
+    expect(md).toContain('Library-only threat')
+    expect(md).toContain('cyclonedx:in-scope=false')
   })
 })
 

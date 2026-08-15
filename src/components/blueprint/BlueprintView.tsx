@@ -17,7 +17,13 @@ import { useThreatModelStore } from '../../store/useThreatModelStore'
 import { getPrimaryBlueprint } from '../../lib/bom'
 import { ASSET_TYPES, FLOW_TYPES, ZONE_TYPES } from '../../lib/catalog'
 import { AssetNode, type AssetNodeData } from './AssetNode'
-import type { Asset, AssetType, FlowType, ZoneType } from '../../types/cyclonedx'
+import type {
+  Actor,
+  Asset,
+  AssetType,
+  FlowType,
+  ZoneType,
+} from '../../types/cyclonedx'
 
 const nodeTypes = { asset: AssetNode }
 
@@ -49,6 +55,9 @@ function BlueprintViewInner() {
   const removeZone = useThreatModelStore((s) => s.removeZone)
   const addBoundary = useThreatModelStore((s) => s.addBoundary)
   const removeBoundary = useThreatModelStore((s) => s.removeBoundary)
+  const addActor = useThreatModelStore((s) => s.addActor)
+  const updateActor = useThreatModelStore((s) => s.updateActor)
+  const removeActor = useThreatModelStore((s) => s.removeActor)
   const suggestThreatsForAsset = useThreatModelStore(
     (s) => s.suggestThreatsForAsset,
   )
@@ -58,6 +67,8 @@ function BlueprintViewInner() {
   const flows = bp.flows ?? []
   const zones = bp.zones ?? []
   const boundaries = bp.boundaries ?? []
+  const actors = bp.actors ?? []
+  const components = bom.components ?? []
 
   const initialNodes: Node<AssetNodeData>[] = useMemo(
     () =>
@@ -126,11 +137,13 @@ function BlueprintViewInner() {
 
   const selectedAsset = assets.find((a) => a['bom-ref'] === selectedRef)
   const selectedFlow = flows.find((f) => f['bom-ref'] === selectedRef)
+  const selectedActor = actors.find((a) => a['bom-ref'] === selectedRef)
 
   const [newAssetName, setNewAssetName] = useState('New Service')
   const [newAssetType, setNewAssetType] = useState<AssetType>('service')
   const [newZoneName, setNewZoneName] = useState('Trust Zone')
   const [newZoneType, setNewZoneType] = useState<ZoneType>('trust')
+  const [newActorName, setNewActorName] = useState('External user')
 
   return (
     <div className="stack">
@@ -192,6 +205,21 @@ function BlueprintViewInner() {
         >
           Add zone
         </button>
+        <input
+          value={newActorName}
+          onChange={(e) => setNewActorName(e.target.value)}
+          placeholder="Actor name"
+          style={{ padding: '0.5rem 0.7rem', borderRadius: 8, border: '1px solid var(--line)' }}
+        />
+        <button
+          className="btn"
+          type="button"
+          onClick={() =>
+            addActor({ name: newActorName.trim() || 'Actor' })
+          }
+        >
+          Add actor
+        </button>
       </div>
 
       <div className="split">
@@ -226,6 +254,12 @@ function BlueprintViewInner() {
             <AssetInspector
               asset={selectedAsset}
               zones={zones}
+              components={components
+                .filter((c): c is typeof c & { 'bom-ref': string } => !!c['bom-ref'])
+                .map((c) => ({
+                  ref: c['bom-ref'],
+                  name: c.name ?? c['bom-ref'],
+                }))}
               onChange={(patch) => updateAsset(selectedAsset['bom-ref'], patch)}
               onRemove={() => removeAsset(selectedAsset['bom-ref'])}
               onSuggestStride={() =>
@@ -242,15 +276,49 @@ function BlueprintViewInner() {
               onChange={(patch) => updateFlow(selectedFlow['bom-ref'], patch)}
               onRemove={() => removeFlow(selectedFlow['bom-ref'])}
             />
+          ) : selectedActor ? (
+            <ActorInspector
+              actor={selectedActor}
+              zones={zones}
+              onChange={(patch) => updateActor(selectedActor['bom-ref'], patch)}
+              onRemove={() => removeActor(selectedActor['bom-ref'])}
+            />
           ) : (
             <div>
               <h3>Blueprint</h3>
               <p className="muted" style={{ marginTop: 0 }}>
                 Select an asset or drag between handles to create a{' '}
-                <span className="mono">flow</span>. Zones and boundaries are
-                CycloneDX blueprint constructs for trust modeling.
+                <span className="mono">flow</span>. Manage actors, zones, and
+                boundaries below.
               </p>
               <div className="stack">
+                <div>
+                  <strong>Actors</strong>
+                  <div className="list" style={{ marginTop: 8 }}>
+                    {actors.length === 0 && (
+                      <div className="empty">No actors yet</div>
+                    )}
+                    {actors.map((a) => {
+                      const partyName =
+                        'name' in a.party
+                          ? a.party.name
+                          : `ref:${a.party.ref}`
+                      return (
+                        <button
+                          key={a['bom-ref']}
+                          type="button"
+                          className="list-item"
+                          onClick={() => setSelectedRef(a['bom-ref'])}
+                        >
+                          <div>
+                            <h4>{partyName}</h4>
+                            <p className="mono">{a['bom-ref']}</p>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
                 <div>
                   <strong>Zones</strong>
                   <div className="list" style={{ marginTop: 8 }}>
@@ -323,6 +391,7 @@ function BlueprintViewInner() {
 function AssetInspector({
   asset,
   zones,
+  components,
   onChange,
   onRemove,
   onSuggestStride,
@@ -330,6 +399,7 @@ function AssetInspector({
 }: {
   asset: Asset
   zones: { 'bom-ref': string; name: string }[]
+  components: { ref: string; name: string }[]
   onChange: (patch: Partial<Asset>) => void
   onRemove: () => void
   onSuggestStride: () => void
@@ -375,6 +445,49 @@ function AssetInspector({
         </select>
       </div>
       <div className="field">
+        <label>Component ref (SBOM bom-ref)</label>
+        {components.length > 0 ? (
+          <select
+            value={asset.componentRef ?? ''}
+            onChange={(e) =>
+              onChange({ componentRef: e.target.value || undefined })
+            }
+            className="mono"
+          >
+            <option value="">None</option>
+            {components.map((c) => (
+              <option key={c.ref} value={c.ref}>
+                {c.name} ({c.ref})
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            value={asset.componentRef ?? ''}
+            onChange={(e) =>
+              onChange({ componentRef: e.target.value || undefined })
+            }
+            placeholder="Import SBOM or type bom-ref"
+            className="mono"
+          />
+        )}
+      </div>
+      <div className="field">
+        <label>Responsibilities (one per line)</label>
+        <textarea
+          value={(asset.responsibilities ?? []).join('\n')}
+          onChange={(e) =>
+            onChange({
+              responsibilities: e.target.value
+                .split('\n')
+                .map((s) => s.trim())
+                .filter(Boolean),
+            })
+          }
+          placeholder="Authenticate callers&#10;Enforce rate limits"
+        />
+      </div>
+      <div className="field">
         <label>Description</label>
         <textarea
           value={asset.description ?? ''}
@@ -393,6 +506,80 @@ function AssetInspector({
           Delete
         </button>
       </div>
+    </div>
+  )
+}
+
+function ActorInspector({
+  actor,
+  zones,
+  onChange,
+  onRemove,
+}: {
+  actor: Actor
+  zones: { 'bom-ref': string; name: string }[]
+  onChange: (patch: Partial<Actor>) => void
+  onRemove: () => void
+}) {
+  const partyName = 'name' in actor.party ? actor.party.name : ''
+  const partyDesc =
+    'name' in actor.party ? (actor.party.description ?? '') : ''
+  return (
+    <div className="stack">
+      <h3>Actor</h3>
+      <div className="field">
+        <label>Party name</label>
+        <input
+          value={partyName}
+          onChange={(e) =>
+            onChange({
+              party: {
+                name: e.target.value,
+                description: partyDesc || undefined,
+              },
+            })
+          }
+        />
+      </div>
+      <div className="field">
+        <label>Party description</label>
+        <textarea
+          value={partyDesc}
+          onChange={(e) =>
+            onChange({
+              party: {
+                name: partyName || 'Actor',
+                description: e.target.value || undefined,
+              },
+            })
+          }
+        />
+      </div>
+      <div className="field">
+        <label>Description</label>
+        <textarea
+          value={actor.description ?? ''}
+          onChange={(e) => onChange({ description: e.target.value })}
+        />
+      </div>
+      <div className="field">
+        <label>Zone</label>
+        <select
+          value={actor.zone ?? ''}
+          onChange={(e) => onChange({ zone: e.target.value || undefined })}
+        >
+          <option value="">None</option>
+          {zones.map((z) => (
+            <option key={z['bom-ref']} value={z['bom-ref']}>
+              {z.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <p className="mono muted">{actor['bom-ref']}</p>
+      <button className="btn btn-danger" type="button" onClick={onRemove}>
+        Delete actor
+      </button>
     </div>
   )
 }
