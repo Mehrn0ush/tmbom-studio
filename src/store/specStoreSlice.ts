@@ -27,11 +27,8 @@ import {
   createTrustBoundary,
   createUseCaseDefinition,
 } from '../lib/specFactories'
-
-function bumpVersion(bom: CycloneDxBom) {
-  bom.version = (bom.version ?? 1) + 1
-  if (bom.metadata) bom.metadata.timestamp = new Date().toISOString()
-}
+import { bumpVersion } from './bomMutations'
+import type { StoreHost } from './storeTypes'
 
 export interface SpecStoreSlice {
   addControl: (partial: Partial<Control> & { name: string }) => string
@@ -93,14 +90,11 @@ export interface SpecStoreSlice {
   ) => void
 }
 
-/** Host store shape for spec slice mutations (avoids circular ThreatModelState import). */
-export type SpecStoreHost = {
-  bom: CycloneDxBom
-  selectedRef: string | null
-} & SpecStoreSlice
+/** @deprecated Use StoreHost from storeTypes — kept for existing imports. */
+export type SpecStoreHost = StoreHost & SpecStoreSlice
 
 export const createSpecStoreSlice: StateCreator<
-  SpecStoreHost,
+  StoreHost & SpecStoreSlice,
   [],
   [],
   SpecStoreSlice

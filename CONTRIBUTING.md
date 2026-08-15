@@ -36,6 +36,7 @@ npm run validate:example
 ## Project layout
 
 - `src/` — React UI, Zustand store, CycloneDX helpers
+- `src/store/` — composed slices (`blueprint`, `threat`, `risk`, `spec`) + `useThreatModelStore`
 - `examples/` — committed sample `.cdx.json` artifacts
 - `projects/` — Git-friendly place for local TM-BOMs (ignored drafts)
 - `schemas/2.0/` — vendored CycloneDX 2.0 threat-modeling schemas

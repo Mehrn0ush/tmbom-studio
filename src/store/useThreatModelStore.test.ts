@@ -80,4 +80,32 @@ describe('useThreatModelStore', () => {
     expect((bom.threats?.threats?.length ?? 0) > 0).toBe(true)
     expect((bom.controls?.length ?? 0) > 0).toBe(true)
   })
+
+  it('suggests STRIDE threats for an asset and switches to threats view', () => {
+    const assetRef = useThreatModelStore.getState().addAsset({
+      name: 'Orders DB',
+      type: 'data-store',
+    })
+    const count = useThreatModelStore
+      .getState()
+      .suggestThreatsForAsset(assetRef, 'STRIDE')
+    const state = useThreatModelStore.getState()
+    expect(count).toBeGreaterThan(0)
+    expect(state.bom.threats?.threats?.length).toBe(count)
+    expect(state.view).toBe('threats')
+  })
+
+  it('cascades asset removal to flows', () => {
+    const a = useThreatModelStore.getState().addAsset({ name: 'A' })
+    const b = useThreatModelStore.getState().addAsset({ name: 'B' })
+    useThreatModelStore.getState().addFlow({
+      name: 'A→B',
+      source: a,
+      destination: b,
+    })
+    useThreatModelStore.getState().removeAsset(a)
+    const bp = useThreatModelStore.getState().bom.blueprints![0]
+    expect(bp.assets).toHaveLength(1)
+    expect(bp.flows).toHaveLength(0)
+  })
 })
