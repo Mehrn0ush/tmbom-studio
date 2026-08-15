@@ -4,6 +4,8 @@ How security, engineering, and risk teams can adopt **ThreatModeler** to produce
 
 ThreatModeler is a workspace for creating standards-based threat models—not a replacement for your GRC platform. Treat exported `.cdx.json` files as the durable artifact you version, review, and exchange.
 
+For a short **how/why to use the public GitHub Pages app** (workshops, demos, save-vs-cache), see [docs/blog/using-tmbom-studio-on-github-pages.md](./docs/blog/using-tmbom-studio-on-github-pages.md).
+
 ---
 
 ## 1. Who should use it

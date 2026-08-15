@@ -14,6 +14,7 @@ Interactive workspace to build architecture blueprints, STRIDE threats, scenario
 
 - **Repo:** https://github.com/Mehrn0ush/tmbom-studio  
 - **Org guide:** [GUIDELINES.md](./GUIDELINES.md)  
+- **Pages how/why (blog):** [docs/blog/using-tmbom-studio-on-github-pages.md](./docs/blog/using-tmbom-studio-on-github-pages.md)  
 - **Contributing:** [CONTRIBUTING.md](./CONTRIBUTING.md)  
 - **License:** [Apache-2.0](./LICENSE)
 
@@ -153,9 +154,12 @@ One-time Pages setting (if the site is not live yet):
 
 ## Roadmap (later)
 
+- Symmetric cross-links from risks / CAPEC / trees (not only threats)
+- Guided SBOM remapping UI + richer BOM-Link editing
+- Align sample + soft-fail gaps against evolving `2.0-dev` schema
 - Real-time multi-user editing (beyond session packages)
-- CAPEC Mechanisms / Domains hierarchical browser (Views 1000 / 3000 XML)
-- Deeper automated SBOM↔TM-BOM correlation
+
+Done recently (product layer, no spec change): CAPEC hierarchy browser, AJV-on-save with vendored schema deps, SBOM/diagram import, in-scope report/export, grouped nav, Pages CSP meta.
 
 ---
 
