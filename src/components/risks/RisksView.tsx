@@ -14,6 +14,7 @@ import type {
   RiskResponseStrategy,
   RiskStatus,
 } from '../../types/cyclonedx'
+import { CrossLinks, useRiskCrossLinks } from '../shared/CrossLinks'
 
 export function RisksView() {
   const bom = useThreatModelStore((s) => s.bom)
@@ -493,6 +494,10 @@ export function RisksView() {
                 </button>
               </div>
             ))}
+            <div className="field">
+              <label>Cross-links</label>
+              <RiskCrossLinksPanel riskRef={selected['bom-ref']} />
+            </div>
             <p className="mono muted">{selected['bom-ref']}</p>
             <button
               className="btn btn-danger"
@@ -506,4 +511,9 @@ export function RisksView() {
       </aside>
     </div>
   )
+}
+
+function RiskCrossLinksPanel({ riskRef }: { riskRef: string }) {
+  const links = useRiskCrossLinks(riskRef)
+  return <CrossLinks links={links} />
 }

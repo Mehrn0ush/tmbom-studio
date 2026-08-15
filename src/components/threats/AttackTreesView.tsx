@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useThreatModelStore } from '../../store/useThreatModelStore'
 import type { AttackTreeOperator } from '../../types/cyclonedx'
+import { CrossLinks, useAttackTreeCrossLinks } from '../shared/CrossLinks'
 
 export function AttackTreesView() {
   const bom = useThreatModelStore((s) => s.bom)
@@ -234,6 +235,10 @@ export function AttackTreesView() {
               </>
             )}
 
+            <div className="field">
+              <label>Cross-links</label>
+              <TreeCrossLinksPanel treeRef={selected['bom-ref']} />
+            </div>
             <p className="mono muted">{selected['bom-ref']}</p>
             <button
               className="btn btn-danger"
@@ -247,4 +252,9 @@ export function AttackTreesView() {
       </aside>
     </div>
   )
+}
+
+function TreeCrossLinksPanel({ treeRef }: { treeRef: string }) {
+  const links = useAttackTreeCrossLinks(treeRef)
+  return <CrossLinks links={links} />
 }

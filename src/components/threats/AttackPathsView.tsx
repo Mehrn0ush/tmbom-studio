@@ -56,7 +56,6 @@ export function AttackPathsView() {
               onClick={() =>
                 addAttackPathStep(p['bom-ref'], {
                   description: 'New step',
-                  number: p.steps.length + 1,
                 })
               }
             >

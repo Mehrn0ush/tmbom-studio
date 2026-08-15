@@ -150,11 +150,10 @@ if (!ok) {
     console.warn(`  - ${e.instancePath || '/'} ${e.message}`)
   }
   if (errors.length > 15) console.warn(`  … and ${errors.length - 15} more`)
-  // Soft-fail while the upstream 2.0-dev-threatmodeling schema settles
-  console.warn(
-    'Continuing with soft-fail (schema is from 2.0-dev-threatmodeling).',
+  console.error(
+    'Failing CI: examples/checkout-api.cdx.json must validate against cyclonedx-2.0-bundled.schema.json',
   )
-  process.exit(0)
+  process.exit(1)
 }
 
 console.log('JSON Schema validation passed against cyclonedx-2.0-bundled.schema.json')

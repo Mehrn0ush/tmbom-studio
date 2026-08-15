@@ -70,24 +70,54 @@ export function ProfilesView() {
                 />
               </Field>
               <Field label="Sophistication">
-                <input
+                <select
                   value={p.sophistication ?? ''}
                   onChange={(e) =>
                     updateThreatProfile(p['bom-ref'], {
-                      sophistication: e.target.value,
+                      sophistication: e.target.value || undefined,
                     })
                   }
-                />
+                >
+                  <option value="">—</option>
+                  {(
+                    [
+                      'none',
+                      'minimal',
+                      'intermediate',
+                      'advanced',
+                      'expert',
+                    ] as const
+                  ).map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
               </Field>
               <Field label="Resources">
-                <input
+                <select
                   value={p.resources ?? ''}
                   onChange={(e) =>
                     updateThreatProfile(p['bom-ref'], {
-                      resources: e.target.value,
+                      resources: e.target.value || undefined,
                     })
                   }
-                />
+                >
+                  <option value="">—</option>
+                  {(
+                    [
+                      'minimal',
+                      'limited',
+                      'moderate',
+                      'substantial',
+                      'unlimited',
+                    ] as const
+                  ).map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
               </Field>
               <Field label="Skill set (one per line)">
                 <textarea

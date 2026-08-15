@@ -13,13 +13,20 @@ import {
 import { describeIoError } from '../../lib/ioErrors'
 import { validateTmbom } from '../../lib/validateBom'
 import { validateBomSchema } from '../../lib/schemaValidate'
-import { importSbomToTmbom, parseSbomJson } from '../../lib/sbomImport'
+import {
+  applySbomImport,
+  defaultSbomDecisions,
+  listSbomCandidates,
+  parseSbomJson,
+  type SbomImportCandidate,
+  type SbomMapDecision,
+} from '../../lib/sbomImport'
 import {
   applyDiagramImport,
   importDrawio,
   importThreatDragon,
 } from '../../lib/diagramImport'
-import { toExportBom } from '../../lib/bom'
+import { getPrimaryBlueprint, toExportBom } from '../../lib/bom'
 import { useBomValidation } from '../../hooks/useBomValidation'
 import {
   filterBomByInScope,
@@ -60,6 +67,12 @@ export function ExportView() {
   const [exportMode, setExportMode] = useState<InScopeExportMode>('all')
   const sbomRef = useRef<HTMLInputElement>(null)
   const diagramRef = useRef<HTMLInputElement>(null)
+  const [sbomPending, setSbomPending] = useState<{
+    fileName: string
+    raw: unknown
+    candidates: SbomImportCandidate[]
+    decisions: Record<string, SbomMapDecision>
+  } | null>(null)
 
   const exportDoc = useMemo(() => {
     const base = toExportBom(bom)
@@ -170,15 +183,40 @@ export function ExportView() {
   const onSbomFile = async (file: File) => {
     try {
       const text = await file.text()
-      const { bom: next, mapped } = importSbomToTmbom(parseSbomJson(text), bom)
-      importBom(next)
+      const raw = parseSbomJson(text)
+      const candidates = listSbomCandidates(raw, bom)
+      if (candidates.length === 0) {
+        setError('SBOM has no named components or services to map.')
+        return
+      }
+      setSbomPending({
+        fileName: file.name,
+        raw,
+        candidates,
+        decisions: defaultSbomDecisions(candidates),
+      })
       setStatus(
-        `Imported SBOM “${file.name}”: linked ${mapped} component(s)/service(s) as blueprint assets.`,
+        `Review SBOM mapping for “${file.name}” (${candidates.length} entries).`,
       )
       setError(null)
     } catch (e) {
       setError(describeIoError(e, 'import') || 'SBOM import failed')
     }
+  }
+
+  const applySbomPending = () => {
+    if (!sbomPending) return
+    const { bom: next, mapped, linked, skipped } = applySbomImport(
+      sbomPending.raw,
+      bom,
+      sbomPending.decisions,
+    )
+    importBom(next)
+    setStatus(
+      `Applied SBOM “${sbomPending.fileName}”: ${mapped} mapped (${linked} linked to existing assets), ${skipped} skipped.`,
+    )
+    setSbomPending(null)
+    setError(null)
   }
 
   const onDiagramFile = async (file: File) => {
@@ -362,6 +400,101 @@ export function ExportView() {
           </p>
         )}
       </div>
+
+      {sbomPending && (
+        <div className="panel panel-pad stack">
+          <h3 style={{ marginTop: 0, fontFamily: 'var(--font-display)' }}>
+            Map SBOM → blueprint assets
+          </h3>
+          <p className="muted" style={{ marginTop: 0 }}>
+            Choose create new asset, link an existing asset via{' '}
+            <span className="mono">componentRef</span>, or skip. Name matches
+            are pre-selected when found.
+          </p>
+          <div className="list">
+            {sbomPending.candidates.map((c) => {
+              const decision = sbomPending.decisions[c.key] ?? {
+                action: 'create' as const,
+              }
+              const assets = getPrimaryBlueprint(bom).assets ?? []
+              const selectValue =
+                decision.action === 'skip'
+                  ? 'skip'
+                  : decision.action === 'link'
+                    ? `link:${decision.assetRef}`
+                    : 'create'
+              return (
+                <div
+                  key={c.key}
+                  className="list-item"
+                  style={{ cursor: 'default', alignItems: 'flex-start' }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <h4>
+                      {c.name}
+                      {c.version ? ` @ ${c.version}` : ''}
+                    </h4>
+                    <p className="mono">
+                      {c.kind}
+                      {c.type ? ` · ${c.type}` : ''} · {c.key}
+                      {c.suggestedAssetName
+                        ? ` · suggested: ${c.suggestedAssetName}`
+                        : ''}
+                    </p>
+                  </div>
+                  <select
+                    value={selectValue}
+                    onChange={(e) => {
+                      const v = e.target.value
+                      let next: SbomMapDecision
+                      if (v === 'skip') next = { action: 'skip' }
+                      else if (v === 'create') next = { action: 'create' }
+                      else
+                        next = {
+                          action: 'link',
+                          assetRef: v.slice('link:'.length),
+                        }
+                      setSbomPending((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              decisions: { ...prev.decisions, [c.key]: next },
+                            }
+                          : prev,
+                      )
+                    }}
+                    style={{ maxWidth: 260 }}
+                  >
+                    <option value="create">Create new asset</option>
+                    <option value="skip">Skip</option>
+                    {assets.map((a) => (
+                      <option key={a['bom-ref']} value={`link:${a['bom-ref']}`}>
+                        Link: {a.name ?? a['bom-ref']}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )
+            })}
+          </div>
+          <div className="btn-row">
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={applySbomPending}
+            >
+              Apply mapping
+            </button>
+            <button
+              className="btn"
+              type="button"
+              onClick={() => setSbomPending(null)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="panel panel-pad">
         <h3 style={{ marginTop: 0, fontFamily: 'var(--font-display)' }}>

@@ -5,7 +5,7 @@
   "serialNumber": "urn:uuid:a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-14T10:23:40.191Z",
+    "timestamp": "2026-08-15T20:16:22.167Z",
     "component": {
       "type": "application",
       "name": "Checkout API",
@@ -358,8 +358,8 @@
         "bom-ref": "profile-opportunistic-attacker",
         "name": "Opportunistic external attacker",
         "description": "Commodity tooling, no insider access, profit-motivated.",
-        "sophistication": "low",
-        "resources": "commodity",
+        "sophistication": "minimal",
+        "resources": "limited",
         "skillSet": [
           "web-app",
           "credential-theft"
@@ -543,12 +543,11 @@
         "impact": {
           "level": "major",
           "polarity": "harm",
-          "rationale": "Fraudulent fulfillment and chargebacks."
+          "description": "Fraudulent fulfillment and chargebacks."
         },
         "riskScore": {
           "level": "medium",
-          "methodology": "qualitative-matrix",
-          "rationale": "CycloneDX qualitative likelihood × impact matrix (workshop scale)."
+          "methodology": "qualitative-matrix"
         }
       },
       {
@@ -571,7 +570,7 @@
         "impact": {
           "level": "catastrophic",
           "polarity": "harm",
-          "rationale": "Large-scale PII exposure and regulatory impact."
+          "description": "Large-scale PII exposure and regulatory impact."
         },
         "riskScore": {
           "level": "medium",
@@ -598,7 +597,7 @@
         "impact": {
           "level": "moderate",
           "polarity": "harm",
-          "rationale": "Revenue loss per order; detectable in reconciliation."
+          "description": "Revenue loss per order; detectable in reconciliation."
         },
         "riskScore": {
           "level": "medium",
@@ -624,7 +623,7 @@
         "impact": {
           "level": "major",
           "polarity": "harm",
-          "rationale": "Lost sales and SLA breach during peak."
+          "description": "Lost sales and SLA breach during peak."
         },
         "riskScore": {
           "level": "medium",
@@ -649,7 +648,7 @@
         "impact": {
           "level": "moderate",
           "polarity": "harm",
-          "rationale": "Privacy harm and possible GDPR Article 5/6 issues."
+          "description": "Privacy harm and possible GDPR Article 5/6 issues."
         },
         "riskScore": {
           "level": "medium",
@@ -837,13 +836,16 @@
         "steps": [
           {
             "bom-ref": "path-step-phish",
-            "number": 1,
             "description": "Phish developer or leak API key from repository",
-            "technique": "capec-21-trusted-ids"
+            "attackPattern": "capec-21-trusted-ids",
+            "technique": {
+              "id": "T1078",
+              "name": "Valid Accounts",
+              "tactic": "initial-access"
+            }
           },
           {
             "bom-ref": "path-step-call",
-            "number": 2,
             "description": "Invoke checkout endpoints with stolen credentials",
             "boundaryCrossed": "boundary-internet-dmz",
             "mitigations": [
@@ -937,9 +939,9 @@
           },
           "score": {
             "level": "high",
-            "methodology": "qualitative-matrix",
-            "rationale": "ISO 31000-aligned qualitative assessment in workshop."
-          }
+            "methodology": "qualitative-matrix"
+          },
+          "rationale": "ISO 31000-aligned qualitative assessment in workshop."
         },
         "residualRisk": {
           "likelihood": {

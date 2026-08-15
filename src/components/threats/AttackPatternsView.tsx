@@ -11,6 +11,10 @@ import {
   type CapecCatalogEntry,
   type CapecCatalogView,
 } from '../../lib/capecCatalog'
+import {
+  CrossLinks,
+  useAttackPatternCrossLinks,
+} from '../shared/CrossLinks'
 
 export function AttackPatternsView() {
   const bom = useThreatModelStore((s) => s.bom)
@@ -355,9 +359,13 @@ export function AttackPatternsView() {
               <strong>Linked threats</strong>
               <p className="muted" style={{ marginTop: 4 }}>
                 {linkedThreats.length === 0
-                  ? 'None yet — link from Threats inspector.'
+                  ? 'None yet — link from Threats inspector or use cross-links.'
                   : linkedThreats.map((t) => t.name).join(', ')}
               </p>
+            </div>
+            <div className="field">
+              <label>Cross-links</label>
+              <PatternCrossLinksPanel patternRef={selected['bom-ref']} />
             </div>
             {selected.capecId != null && (
               <p className="muted">
@@ -454,4 +462,9 @@ function CapecTreeNode({
         ))}
     </div>
   )
+}
+
+function PatternCrossLinksPanel({ patternRef }: { patternRef: string }) {
+  const links = useAttackPatternCrossLinks(patternRef)
+  return <CrossLinks links={links} />
 }

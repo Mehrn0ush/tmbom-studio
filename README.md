@@ -154,12 +154,10 @@ One-time Pages setting (if the site is not live yet):
 
 ## Roadmap (later)
 
-- Symmetric cross-links from risks / CAPEC / trees (not only threats)
-- Guided SBOM remapping UI + richer BOM-Link editing
-- Align sample + soft-fail gaps against evolving `2.0-dev` schema
+- Deeper BOM-Link / externalReferences editing beyond SBOM map + Links view
 - Real-time multi-user editing (beyond session packages)
 
-Done recently (product layer, no spec change): CAPEC hierarchy browser, AJV-on-save with vendored schema deps, SBOM/diagram import, in-scope report/export, grouped nav, Pages CSP meta.
+Done recently: sample validates hard against bundled schema; symmetric cross-links (threats/risks/CAPEC/trees); guided SBOM→asset remapping.
 
 ---
 

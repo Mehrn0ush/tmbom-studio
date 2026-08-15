@@ -177,15 +177,14 @@ export interface Impact {
   level: ImpactLevel
   polarity?: 'harm' | 'benefit'
   score?: number
-  rationale?: string
+  description?: string
 }
 
 export interface RiskScore {
   level: RiskScoreLevel
   score?: number
   vector?: string
-  methodology?: string
-  rationale?: string
+  methodology?: string | { name: string; description?: string }
 }
 
 export interface Rating {

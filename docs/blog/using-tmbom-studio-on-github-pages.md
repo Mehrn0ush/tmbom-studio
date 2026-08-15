@@ -79,7 +79,7 @@ On **Projects**:
 
 - **Import SBOM…** — map CycloneDX components/services into blueprint assets with `componentRef` / bom-ref links.  
 - **Import Threat Dragon / draw.io…** — lossy DFD → assets and flows (a starter canvas, not a perfect round-trip).  
-- **Run JSON Schema check** / save with validation — structural checks always run; AJV runs against the bundled 2.0 schema (soft-fail still possible while `2.0-dev-threatmodeling` evolves).
+- **Run JSON Schema check** / save with validation — structural checks always run; AJV validates against the bundled 2.0 schema (the checkout sample is kept green in CI).
 
 ### 5. Filter library-style noise with `cyclonedx:in-scope`
 

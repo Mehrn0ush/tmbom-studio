@@ -120,10 +120,17 @@ export interface TrustBoundary {
 
 export interface AttackPathStep {
   'bom-ref'?: RefType
-  number?: number
+  name?: string
   description: string
-  technique?: RefLinkType
+  /** ATT&CK (or similar) technique object — not a bom-ref string */
+  technique?: import('./cyclonedx').AttackTechnique
+  /** Link to threats.attackPatterns[] entry */
+  attackPattern?: RefLinkType
+  killChainPhase?: string
+  source?: RefLinkType
+  destination?: RefLinkType
   boundaryCrossed?: RefLinkType
+  exploits?: RefLinkType[]
   mitigations?: RefLinkType[]
   properties?: Property[]
 }

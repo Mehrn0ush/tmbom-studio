@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { emptyBom, getPrimaryBlueprint } from './bom'
-import { importSbomToTmbom, parseSbomJson } from './sbomImport'
+import {
+  applySbomImport,
+  importSbomToTmbom,
+  listSbomCandidates,
+  parseSbomJson,
+} from './sbomImport'
 
 describe('parseSbomJson', () => {
   it('parses JSON text', () => {
@@ -74,5 +79,46 @@ describe('importSbomToTmbom', () => {
     const { bom, mapped } = importSbomToTmbom(null, existing)
     expect(mapped).toBe(0)
     expect(bom.specFormat).toBe('CycloneDX')
+  })
+
+  it('links to an existing asset when decided', () => {
+    const existing = emptyBom('Host')
+    const bp = getPrimaryBlueprint(existing)
+    bp.assets = [
+      {
+        'bom-ref': 'asset-checkout',
+        name: 'Checkout',
+        type: 'service',
+      },
+    ]
+    const sbom = {
+      components: [
+        { 'bom-ref': 'pkg:app/checkout@2', type: 'application', name: 'Checkout' },
+      ],
+    }
+    const candidates = listSbomCandidates(sbom, existing)
+    expect(candidates[0]?.suggestedAssetRef).toBe('asset-checkout')
+    const { bom, linked, mapped } = applySbomImport(sbom, existing, {
+      [candidates[0]!.key]: { action: 'link', assetRef: 'asset-checkout' },
+    })
+    expect(mapped).toBe(1)
+    expect(linked).toBe(1)
+    const asset = getPrimaryBlueprint(bom).assets!.find(
+      (a) => a['bom-ref'] === 'asset-checkout',
+    )
+    expect(asset?.componentRef).toBe('pkg:app/checkout@2')
+    expect(getPrimaryBlueprint(bom).assets).toHaveLength(1)
+  })
+
+  it('skips candidates marked skip', () => {
+    const existing = emptyBom()
+    const sbom = {
+      components: [{ 'bom-ref': 'pkg:x', type: 'library', name: 'x' }],
+    }
+    const { mapped, skipped } = applySbomImport(sbom, existing, {
+      'pkg:x': { action: 'skip' },
+    })
+    expect(mapped).toBe(0)
+    expect(skipped).toBe(1)
   })
 })

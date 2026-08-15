@@ -347,13 +347,16 @@ export function createSampleBom(): CycloneDxBom {
       steps: [
         {
           'bom-ref': 'path-step-phish',
-          number: 1,
           description: 'Phish developer or leak API key from repository',
-          technique: STABLE.apTrustedId,
+          attackPattern: STABLE.apTrustedId,
+          technique: {
+            id: 'T1078',
+            name: 'Valid Accounts',
+            tactic: 'initial-access',
+          },
         },
         {
           'bom-ref': 'path-step-call',
-          number: 2,
           description: 'Invoke checkout endpoints with stolen credentials',
           boundaryCrossed: STABLE.edgeBoundary,
           mitigations: [STABLE.ctrlMtls],
@@ -561,12 +564,11 @@ export function createSampleBom(): CycloneDxBom {
     impact: {
       level: 'major',
       polarity: 'harm',
-      rationale: 'Fraudulent fulfillment and chargebacks.',
+      description: 'Fraudulent fulfillment and chargebacks.',
     },
     riskScore: {
       level: computeRiskLevel('medium', 'major'),
       methodology: 'qualitative-matrix',
-      rationale: 'CycloneDX qualitative likelihood × impact matrix (workshop scale).',
     },
   })
   const scInsider = createScenario({
@@ -585,7 +587,7 @@ export function createSampleBom(): CycloneDxBom {
     impact: {
       level: 'catastrophic',
       polarity: 'harm',
-      rationale: 'Large-scale PII exposure and regulatory impact.',
+      description: 'Large-scale PII exposure and regulatory impact.',
     },
     riskScore: {
       level: computeRiskLevel('low', 'catastrophic'),
@@ -605,7 +607,7 @@ export function createSampleBom(): CycloneDxBom {
     impact: {
       level: 'moderate',
       polarity: 'harm',
-      rationale: 'Revenue loss per order; detectable in reconciliation.',
+      description: 'Revenue loss per order; detectable in reconciliation.',
     },
     riskScore: {
       level: computeRiskLevel('high', 'moderate'),
@@ -625,7 +627,7 @@ export function createSampleBom(): CycloneDxBom {
     impact: {
       level: 'major',
       polarity: 'harm',
-      rationale: 'Lost sales and SLA breach during peak.',
+      description: 'Lost sales and SLA breach during peak.',
     },
     riskScore: {
       level: computeRiskLevel('medium', 'major'),
@@ -645,7 +647,7 @@ export function createSampleBom(): CycloneDxBom {
     impact: {
       level: 'moderate',
       polarity: 'harm',
-      rationale: 'Privacy harm and possible GDPR Article 5/6 issues.',
+      description: 'Privacy harm and possible GDPR Article 5/6 issues.',
     },
     riskScore: {
       level: computeRiskLevel('medium', 'moderate'),
@@ -787,8 +789,8 @@ export function createSampleBom(): CycloneDxBom {
           'bom-ref': STABLE.profileOpportunist,
           name: 'Opportunistic external attacker',
           description: 'Commodity tooling, no insider access, profit-motivated.',
-          sophistication: 'low',
-          resources: 'commodity',
+          sophistication: 'minimal',
+          resources: 'limited',
           skillSet: ['web-app', 'credential-theft'],
         },
       ],
@@ -819,8 +821,8 @@ export function createSampleBom(): CycloneDxBom {
             score: {
               level: 'high',
               methodology: 'qualitative-matrix',
-              rationale: 'ISO 31000-aligned qualitative assessment in workshop.',
             },
+            rationale: 'ISO 31000-aligned qualitative assessment in workshop.',
           },
           residualRisk: {
             likelihood: { level: 'low' },
