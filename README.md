@@ -4,8 +4,8 @@
 
 Interactive workspace to build architecture blueprints, STRIDE threats, scenarios, and risks, then save a standards-aligned **Threat Model Bill of Materials** (`.cdx.json`).
 
-**Live app:** [https://mehrn0ush.github.io/tmbom-studio/](https://mehrn0ush.github.io/tmbom-studio/)  
-**Sample:** [https://mehrn0ush.github.io/tmbom-studio/?example=checkout-api](https://mehrn0ush.github.io/tmbom-studio/?example=checkout-api)
+**Live app:** [https://tms.silastron.com/](https://tms.silastron.com/)  
+**Sample:** [https://tms.silastron.com/?example=checkout-api](https://tms.silastron.com/?example=checkout-api)
 
 [![CI](https://github.com/Mehrn0ush/tmbom-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Mehrn0ush/tmbom-studio/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-green.svg)](./LICENSE)
@@ -92,12 +92,12 @@ npm run dev
 
 Open the URL Vite prints (usually http://localhost:5173).
 
-Or use the live app: [https://mehrn0ush.github.io/tmbom-studio/](https://mehrn0ush.github.io/tmbom-studio/)
+Or use the live app: [https://tms.silastron.com/](https://tms.silastron.com/)
 
 ### First 5 minutes in the UI
 
 1. **Overview → Getting started** — name the system, create a zone, add an asset, suggest STRIDE threats, then open **Projects** to save.
-2. Or skip ahead: click **Sample model** (sidebar) / open [`/?example=checkout-api`](https://mehrn0ush.github.io/tmbom-studio/?example=checkout-api) to explore a full checkout API TM-BOM.
+2. Or skip ahead: click **Sample model** (sidebar) / open [`/?example=checkout-api`](https://tms.silastron.com/?example=checkout-api) to explore a full checkout API TM-BOM.
 3. **Blueprint** — drag assets, draw flows across trust zones.
 4. **Threats / Risks** — refine catalog entries and risk responses (link controls when ready).
 5. **Report** — Print/PDF or **Download .md** for stakeholders; **Projects** — save `*.cdx.json` and commit under `projects/` (see [projects/README.md](./projects/README.md)).
@@ -112,7 +112,7 @@ Or use the live app: [https://mehrn0ush.github.io/tmbom-studio/](https://mehrn0u
 | --- | --- |
 | `npm run dev` | Local development server |
 | `npm run build` | Typecheck + production build |
-| `npm run build:pages` | Production build with GitHub Pages base path |
+| `npm run build:pages` | Production build for GitHub Pages (`/` + custom domain) |
 | `npm run preview` | Preview production build |
 | `npm run lint` | Oxlint |
 | `npm run test` | Vitest unit tests |
@@ -142,13 +142,14 @@ The UI catalog is generated into `src/data/capec-catalog.json` (`npm run generat
 
 - **CI** (`.github/workflows/ci.yml`) runs `lint`, `test`, `build`, and `validate:example` on pushes and pull requests.
 - **Dependabot** (`.github/dependabot.yml`) opens weekly PRs for npm and GitHub Actions updates.
-- **Pages** (`.github/workflows/pages.yml`) builds with `npm run build:pages` and **auto-deploys to the `gh-pages` branch** on every push to `main`.
+- **Pages** (`.github/workflows/pages.yml`) builds with `npm run build:pages` (`base: /`) and **auto-deploys to the `gh-pages` branch** on every push to `main`. Custom domain: [https://tms.silastron.com/](https://tms.silastron.com/) (`public/CNAME`).
 
 One-time Pages setting (if the site is not live yet):
 
 1. **[Settings → Pages](https://github.com/Mehrn0ush/tmbom-studio/settings/pages)**
 2. Source: **Deploy from a branch**
 3. Branch: **`gh-pages`** / **`/ (root)`** → Save
+4. Custom domain: `tms.silastron.com` (keep HTTPS enforced)
 
 ---
 

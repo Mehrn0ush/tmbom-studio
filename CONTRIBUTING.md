@@ -21,7 +21,7 @@ Open the URL Vite prints (usually http://localhost:5173).
 | `npm run lint` | Oxlint |
 | `npm run test` | Vitest unit tests |
 | `npm run build` | Typecheck + production build |
-| `npm run build:pages` | Build with `/tmbom-studio/` base path (GitHub Pages) |
+| `npm run build:pages` | Production build for GitHub Pages (root `/` for tms.silastron.com) |
 | `npm run generate:example` | Regenerate `examples/checkout-api.cdx.json` (+ `public/examples/`) |
 | `npm run validate:example` | Structural checks on the sample TM-BOM |
 | `npm run ci` | `lint` + `test` + `build` + `validate:example` (what GitHub Actions runs) |

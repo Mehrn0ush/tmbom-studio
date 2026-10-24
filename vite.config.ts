@@ -1,8 +1,12 @@
 import { defineConfig, type Plugin } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
-// GitHub Pages project site: https://mehrn0ush.github.io/tmbom-studio/
-const base = process.env.GITHUB_PAGES === 'true' ? '/tmbom-studio/' : '/'
+/**
+ * Custom domain (tms.silastron.com) is served from the gh-pages root.
+ * A /tmbom-studio/ prefix 404s there and leaves a blank page.
+ * github.io/tmbom-studio/ redirects to the custom domain when CNAME is set.
+ */
+const base = '/'
 
 /** Production CSP via meta (GH Pages cannot set response headers easily). */
 function cspMetaPlugin(): Plugin {
